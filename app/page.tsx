@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import LoginModal from '@/components/LoginModal';
 import AdminModal from '@/components/AdminModal';
+import UserMenu from '@/components/UserMenu';
 import Toast from '@/components/Toast';
 import SaveBar from '@/components/SaveBar';
 import PartidosView from '@/components/views/PartidosView';
@@ -64,6 +65,13 @@ export default function Home() {
     toast('¡Hola ' + nombre + '! Haz tus pronósticos');
   }
 
+  function salir() {
+    localStorage.removeItem('polla_user');
+    localStorage.removeItem('polla_id');
+    dispatch({ type: 'LOGOUT' });
+    toast('Sesión cerrada');
+  }
+
   async function guardar() {
     dispatch({ type: 'SET_CAMBIOS', val: false });
     const MAP = Object.fromEntries(ALL_MATCHES.map(m => [m.id, m]));
@@ -101,7 +109,7 @@ export default function Home() {
 
   return (
     <>
-      <Header onCambiarUsuario={() => {}} />
+      <Header />
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 14px 90px' }}>
         <TabBar />
         {vista === 'partidos' && <PartidosView toast={toast} />}
@@ -127,6 +135,7 @@ export default function Home() {
       <SaveBar onGuardar={guardar} />
       <LoginModal onEntrar={entrar} />
       <AdminModal toast={toast} />
+      <UserMenu onSalir={salir} />
       <Toast />
     </>
   );

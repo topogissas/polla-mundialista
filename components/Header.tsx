@@ -1,7 +1,7 @@
 'use client';
 import { useApp } from '@/context/AppContext';
 
-export default function Header({ onCambiarUsuario }: { onCambiarUsuario: () => void }) {
+export default function Header() {
   const { usuario } = useApp();
   return (
     <header style={{ background: 'linear-gradient(135deg,#1A6B2F,#27AE60)', color: '#fff', padding: '22px 14px 18px', textAlign: 'center', position: 'relative' }}>
@@ -12,7 +12,10 @@ export default function Header({ onCambiarUsuario }: { onCambiarUsuario: () => v
       </p>
       <button
         style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,.18)', border: 0, color: '#fff', padding: '6px 12px', borderRadius: 20, fontSize: '.8rem', cursor: 'pointer', fontWeight: 600 }}
-        onClick={() => document.getElementById('loginModal')?.classList.add('show')}
+        onClick={() => {
+          if (usuario) document.getElementById('userMenu')?.classList.add('show');
+          else document.getElementById('loginModal')?.classList.add('show');
+        }}
       >
         👤 {usuario || 'Entrar'}
       </button>

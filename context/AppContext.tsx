@@ -25,7 +25,8 @@ type Action =
   | { type: 'SET_VISTA'; val: Vista }
   | { type: 'SET_FILTRO'; val: string }
   | { type: 'SET_CAMBIOS'; val: boolean }
-  | { type: 'TOAST'; msg: string | null };
+  | { type: 'TOAST'; msg: string | null }
+  | { type: 'LOGOUT' };
 
 const initial: State = {
   usuario: null, participanteId: null,
@@ -52,6 +53,10 @@ function reducer(s: State, a: Action): State {
     case 'SET_FILTRO': return { ...s, filtroFase: a.val };
     case 'SET_CAMBIOS': return { ...s, cambios: a.val };
     case 'TOAST': return { ...s, toastMsg: a.msg };
+    case 'LOGOUT': return {
+      ...initial,
+      resultados: s.resultados, // los resultados son globales, no se pierden
+    };
     default: return s;
   }
 }
