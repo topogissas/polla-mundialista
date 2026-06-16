@@ -19,14 +19,6 @@ export default function ReglasView() {
         <p style={{ marginTop: 12, fontSize: '.82rem', color: '#5a6b5e' }}>Mismo puntaje en <b>todas las fases</b>.</p>
       </div>
       <div style={card}>
-        <h3 style={h3}>⭐ Especiales (al final)</h3>
-        <div>
-          {[['🥇 Campeón', '#D4A017', '10 pts'], ['🥈 Subcampeón', '#D4A017', '5 pts'], ['👟 Más goleadora', '#D4A017', '5 pts']].map(([l, c, p]) => (
-            <div key={l as string} style={row}><span>{l}</span><span style={tag(c as string)}>{p}</span></div>
-          ))}
-        </div>
-      </div>
-      <div style={card}>
         <h3 style={h3}>ℹ️ Cómo funciona</h3>
         <p style={{ fontSize: '.85rem', color: '#5a6b5e' }}>
           1. Cada amigo entra con su nombre y apuesta.<br />

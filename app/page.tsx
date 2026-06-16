@@ -11,7 +11,6 @@ import Toast from '@/components/Toast';
 import SaveBar from '@/components/SaveBar';
 import PartidosView from '@/components/views/PartidosView';
 import RankingView from '@/components/views/RankingView';
-import EspecialesView from '@/components/views/EspecialesView';
 import ReglasView from '@/components/views/ReglasView';
 import AvisosView from '@/components/views/AvisosView';
 import { ALL_MATCHES, partidoCerrado } from '@/lib/matches';
@@ -118,7 +117,6 @@ export default function Home() {
         <TabBar />
         {vista === 'partidos' && <PartidosView toast={toast} />}
         {vista === 'ranking' && <RankingView toast={toast} />}
-        {vista === 'especiales' && <EspecialesView toast={toast} />}
         {vista === 'reglas' && <ReglasView />}
         {vista === 'avisos' && <AvisosView />}
         <div

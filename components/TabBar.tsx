@@ -4,7 +4,7 @@ import type { Vista } from '@/lib/types';
 
 const TABS: [Vista, string][] = [
   ['partidos', 'Pronósticos'], ['ranking', 'Ranking'],
-  ['especiales', 'Especiales'], ['reglas', 'Reglas'], ['avisos', 'Avisos'],
+  ['reglas', 'Reglas'], ['avisos', 'Avisos'],
 ];
 
 export default function TabBar() {
