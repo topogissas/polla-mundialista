@@ -8,6 +8,7 @@ interface State {
   predicciones: Predicciones;
   especiales: Especiales;
   resultados: Resultados;
+  guardados: string[]; // match_ids con apuesta ya guardada y BLOQUEADA
   esAdmin: boolean;
   vista: Vista;
   filtroFase: string;
@@ -25,13 +26,15 @@ type Action =
   | { type: 'SET_VISTA'; val: Vista }
   | { type: 'SET_FILTRO'; val: string }
   | { type: 'SET_CAMBIOS'; val: boolean }
+  | { type: 'SET_GUARDADOS'; ids: string[] }
+  | { type: 'ADD_GUARDADOS'; ids: string[] }
   | { type: 'TOAST'; msg: string | null }
   | { type: 'LOGOUT' };
 
 const initial: State = {
   usuario: null, participanteId: null,
   predicciones: {}, especiales: { campeon: null, subcampeon: null, goleador: null },
-  resultados: {}, esAdmin: false, vista: 'partidos', filtroFase: 'todos',
+  resultados: {}, guardados: [], esAdmin: false, vista: 'partidos', filtroFase: 'todos',
   cambios: false, toastMsg: null,
 };
 
@@ -52,6 +55,8 @@ function reducer(s: State, a: Action): State {
     case 'SET_VISTA': return { ...s, vista: a.val };
     case 'SET_FILTRO': return { ...s, filtroFase: a.val };
     case 'SET_CAMBIOS': return { ...s, cambios: a.val };
+    case 'SET_GUARDADOS': return { ...s, guardados: a.ids };
+    case 'ADD_GUARDADOS': return { ...s, guardados: Array.from(new Set([...s.guardados, ...a.ids])) };
     case 'TOAST': return { ...s, toastMsg: a.msg };
     case 'LOGOUT': return {
       ...initial,
