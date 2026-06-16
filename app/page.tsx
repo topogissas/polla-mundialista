@@ -113,7 +113,7 @@ export default function Home() {
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 14px 90px' }}>
         <TabBar />
         {vista === 'partidos' && <PartidosView toast={toast} />}
-        {vista === 'ranking' && <RankingView />}
+        {vista === 'ranking' && <RankingView toast={toast} />}
         {vista === 'especiales' && <EspecialesView toast={toast} />}
         {vista === 'reglas' && <ReglasView />}
         {vista === 'avisos' && <AvisosView />}

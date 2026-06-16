@@ -26,6 +26,7 @@ export interface Especiales {
 }
 
 export interface RankingEntry {
+  id: string;
   nombre: string;
   total: number;
   exactos: number;
