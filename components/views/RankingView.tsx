@@ -10,7 +10,8 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
   const { esAdmin } = useApp();
   const [tabla, setTabla] = useState<RankingEntry[] | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<RankingEntry | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [confirmReset, setConfirmReset] = useState<RankingEntry | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const cargar = useCallback(async () => {
     const { data: resData } = await sb.from('polla_resultados').select('*');
@@ -49,7 +50,7 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
   useEffect(() => { cargar(); }, [cargar]);
 
   async function borrarParticipante(entry: RankingEntry) {
-    setDeleting(true);
+    setBusy(true);
     try {
       await sb.from('polla_especiales').delete().eq('participante_id', entry.id);
       await sb.from('polla_pronosticos').delete().eq('participante_id', entry.id);
@@ -63,8 +64,25 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
       toast(`✅ Usuario "${entry.nombre}" eliminado`);
       await cargar();
     } finally {
-      setDeleting(false);
+      setBusy(false);
       setConfirmDelete(null);
+    }
+  }
+
+  async function resetearApuestas(entry: RankingEntry) {
+    setBusy(true);
+    try {
+      const { data, error } = await sb.from('polla_pronosticos').delete().eq('participante_id', entry.id).select();
+      if (error) { toast('Error: ' + error.message); return; }
+      if (!data || data.length === 0) {
+        toast('Ese usuario no tiene apuestas para borrar');
+        return;
+      }
+      toast(`✅ Apuestas de "${entry.nombre}" borradas — puede volver a apostar`);
+      await cargar();
+    } finally {
+      setBusy(false);
+      setConfirmReset(null);
     }
   }
 
@@ -76,26 +94,57 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
       {tabla.map((r, i) => {
         const med = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : String(i + 1);
         return (
-          <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 12, padding: '11px 14px', marginBottom: 8, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
-            <div style={{ fontWeight: 800, fontSize: '1.1rem', width: 30, textAlign: 'center', color: i === 0 ? '#D4A017' : '#5a6b5e' }}>{med}</div>
-            <div style={{ flex: 1, fontWeight: 600 }}>
-              {r.nombre}
-              <small style={{ display: 'block', fontWeight: 400, color: '#5a6b5e', fontSize: '.72rem' }}>{r.exactos} exactos · {r.jugados} jugados</small>
-            </div>
-            <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1A6B2F', textAlign: 'right' }}>
-              {r.total}
-              <span style={{ fontSize: '.68rem', fontWeight: 600, color: '#5a6b5e', display: 'block' }}>puntos</span>
+          <div key={r.id} style={{ background: '#fff', borderRadius: 12, padding: '11px 14px', marginBottom: 8, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', width: 30, textAlign: 'center', color: i === 0 ? '#D4A017' : '#5a6b5e' }}>{med}</div>
+              <div style={{ flex: 1, fontWeight: 600 }}>
+                {r.nombre}
+                <small style={{ display: 'block', fontWeight: 400, color: '#5a6b5e', fontSize: '.72rem' }}>{r.exactos} exactos · {r.jugados} jugados</small>
+              </div>
+              <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1A6B2F', textAlign: 'right' }}>
+                {r.total}
+                <span style={{ fontSize: '.68rem', fontWeight: 600, color: '#5a6b5e', display: 'block' }}>puntos</span>
+              </div>
             </div>
             {esAdmin && (
-              <button
-                onClick={() => setConfirmDelete(r)}
-                style={{ background: '#fff0f0', border: '1px solid #f5a5a5', color: '#c0392b', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
-              >🗑 Borrar</button>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setConfirmReset(r)}
+                  style={{ background: '#fff8e8', border: '1px solid #f0d68a', color: '#9a7400', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
+                >🔄 Resetear todas</button>
+                <button
+                  onClick={() => setConfirmDelete(r)}
+                  style={{ background: '#fff0f0', border: '1px solid #f5a5a5', color: '#c0392b', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
+                >🗑 Borrar</button>
+              </div>
             )}
           </div>
         );
       })}
 
+      {/* Modal: confirmar reset de todas las apuestas */}
+      {confirmReset && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%' }}>
+            <h2 style={{ fontSize: '1.1rem', color: '#9a7400', marginBottom: 8 }}>¿Resetear apuestas?</h2>
+            <p style={{ fontSize: '.88rem', color: '#5a6b5e', marginBottom: 18 }}>
+              Se borrarán <b>todas las apuestas</b> de <b>{confirmReset.nombre}</b> (no se borra el usuario). Podrá volver a apostar los partidos que sigan abiertos.
+            </p>
+            <button
+              onClick={() => resetearApuestas(confirmReset)}
+              disabled={busy}
+              style={{ display: 'block', width: '100%', padding: 13, background: '#D4A017', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', marginBottom: 8, opacity: busy ? .6 : 1 }}
+            >{busy ? 'Borrando…' : 'Sí, resetear'}</button>
+            <button
+              onClick={() => setConfirmReset(null)}
+              disabled={busy}
+              style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#1A6B2F', border: '1px solid #27AE60', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}
+            >Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: confirmar borrar usuario */}
       {confirmDelete && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200 }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%' }}>
@@ -105,12 +154,12 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
             </p>
             <button
               onClick={() => borrarParticipante(confirmDelete)}
-              disabled={deleting}
-              style={{ display: 'block', width: '100%', padding: 13, background: '#c0392b', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer', marginBottom: 8, opacity: deleting ? .6 : 1 }}
-            >{deleting ? 'Borrando…' : 'Sí, borrar'}</button>
+              disabled={busy}
+              style={{ display: 'block', width: '100%', padding: 13, background: '#c0392b', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', marginBottom: 8, opacity: busy ? .6 : 1 }}
+            >{busy ? 'Borrando…' : 'Sí, borrar'}</button>
             <button
               onClick={() => setConfirmDelete(null)}
-              disabled={deleting}
+              disabled={busy}
               style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#1A6B2F', border: '1px solid #27AE60', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}
             >Cancelar</button>
           </div>
