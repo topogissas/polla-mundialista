@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { ALL_MATCHES, GRUPOS_LETRAS, inicioPartido, flag, partidoCerrado } from '@/lib/matches';
+import { ALL_MATCHES, GRUPOS_LETRAS, inicioPartido, flag, partidoCerrado, fechaColPartido } from '@/lib/matches';
 import MatchCard from '@/components/MatchCard';
 
 const FASES = [
@@ -66,52 +66,80 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
   if (!usuario) {
     return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#5a6b5e', fontSize: '.9rem' }}>👋 Toca <b>&quot;Entrar&quot;</b> arriba a la derecha para empezar.</div>;
   }
-  let lista = ALL_MATCHES;
-  // Para usuarios, ocultar los partidos que ya no se pueden apostar (cerrados).
-  // El admin ve todos para poder cargar resultados.
-  if (!esAdmin) lista = lista.filter(m => !partidoCerrado(m));
-  if (filtroFase === 'grupo') lista = lista.filter(m => m.fase === 'grupo');
-  else if (filtroFase !== 'todos') lista = lista.filter(m => m.fase === filtroFase);
 
-  if (!esAdmin && lista.length === 0) {
+  // ── Vista admin: ve TODOS los partidos (los necesita para cargar resultados) ──
+  if (esAdmin) {
+    let lista = ALL_MATCHES;
+    if (filtroFase === 'grupo') lista = lista.filter(m => m.fase === 'grupo');
+    else if (filtroFase !== 'todos') lista = lista.filter(m => m.fase === filtroFase);
+    return (
+      <div>
+        <ProximoPartido now={now} />
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '12px 0 4px', WebkitOverflowScrolling: 'touch' as any }}>
+          {FASES.map(([f, label]) => (
+            <button
+              key={f}
+              onClick={() => dispatch({ type: 'SET_FILTRO', val: f })}
+              style={{
+                whiteSpace: 'nowrap', padding: '6px 13px',
+                border: `1px solid ${filtroFase === f ? '#27AE60' : '#dfe8e1'}`,
+                background: filtroFase === f ? '#EDF7EE' : '#fff',
+                borderRadius: 18, fontSize: '.78rem', cursor: 'pointer',
+                color: filtroFase === f ? '#1A6B2F' : '#5a6b5e', fontWeight: 600,
+              }}
+            >{label}</button>
+          ))}
+        </div>
+        {filtroFase === 'grupo' ? (
+          GRUPOS_LETRAS.map(g => (
+            <div key={g}>
+              <div style={{ fontWeight: 800, color: '#1A6B2F', margin: '16px 0 8px', fontSize: '1rem', paddingLeft: 4, borderLeft: '4px solid #27AE60' }}>Grupo {g}</div>
+              {lista.filter(m => m.grupo === g).map(m => <MatchCard key={m.id} m={m} />)}
+            </div>
+          ))
+        ) : (
+          lista.map(m => <MatchCard key={m.id} m={m} />)
+        )}
+      </div>
+    );
+  }
+
+  // ── Vista usuario: solo los partidos del día que corresponde (hoy / próximo día) ──
+  const abiertos = ALL_MATCHES
+    .map(m => ({ m, ini: inicioPartido(m), fecha: fechaColPartido(m) }))
+    .filter((x): x is { m: typeof x.m; ini: Date; fecha: string } => x.ini !== null && x.fecha !== null && !partidoCerrado(x.m))
+    .sort((a, b) => a.ini.getTime() - b.ini.getTime());
+
+  if (!abiertos.length) {
     return (
       <div>
         <ProximoPartido now={now} />
         <div style={{ textAlign: 'center', padding: '40px 20px', color: '#5a6b5e', fontSize: '.9rem' }}>
-          No hay partidos abiertos para apostar en este momento. Revisa el <b>Ranking</b> 🏆
+          No hay partidos abiertos para apostar ahora. Mira lo que apostaron todos en <b>Historial</b> 📜
         </div>
       </div>
     );
   }
 
+  const targetFecha = abiertos[0].fecha;
+  const delDia = abiertos.filter(x => x.fecha === targetFecha).map(x => x.m);
+  const fmt = (ts: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date(ts));
+  const hoy = fmt(now);
+  const manana = fmt(now + 86400000);
+  const titulo = targetFecha === hoy ? '📅 Partidos de hoy'
+    : targetFecha === manana ? '📅 Partidos de mañana'
+    : `📅 Partidos · ${delDia[0].dia}`;
+
   return (
     <div>
       <ProximoPartido now={now} />
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '12px 0 4px', WebkitOverflowScrolling: 'touch' as any }}>
-        {FASES.map(([f, label]) => (
-          <button
-            key={f}
-            onClick={() => dispatch({ type: 'SET_FILTRO', val: f })}
-            style={{
-              whiteSpace: 'nowrap', padding: '6px 13px',
-              border: `1px solid ${filtroFase === f ? '#27AE60' : '#dfe8e1'}`,
-              background: filtroFase === f ? '#EDF7EE' : '#fff',
-              borderRadius: 18, fontSize: '.78rem', cursor: 'pointer',
-              color: filtroFase === f ? '#1A6B2F' : '#5a6b5e', fontWeight: 600,
-            }}
-          >{label}</button>
-        ))}
+      <div style={{ fontWeight: 800, color: '#1A6B2F', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #27AE60' }}>
+        {titulo}
       </div>
-      {filtroFase === 'grupo' ? (
-        GRUPOS_LETRAS.map(g => (
-          <div key={g}>
-            <div style={{ fontWeight: 800, color: '#1A6B2F', margin: '16px 0 8px', fontSize: '1rem', paddingLeft: 4, borderLeft: '4px solid #27AE60' }}>Grupo {g}</div>
-            {lista.filter(m => m.grupo === g).map(m => <MatchCard key={m.id} m={m} />)}
-          </div>
-        ))
-      ) : (
-        lista.map(m => <MatchCard key={m.id} m={m} />)
-      )}
+      {delDia.map(m => <MatchCard key={m.id} m={m} />)}
+      <div style={{ textAlign: 'center', fontSize: '.76rem', color: '#5a6b5e', marginTop: 14 }}>
+        Los partidos que ya pasaron y lo que apostaron todos están en <b>Historial</b> 📜
+      </div>
     </div>
   );
 }

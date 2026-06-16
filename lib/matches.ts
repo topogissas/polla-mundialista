@@ -52,6 +52,19 @@ export function inicioPartido(m: Match): Date | null {
   return new Date(`${fecha}T${m.hora.padStart(5, '0')}:00-05:00`);
 }
 
+// Fecha calendario (hora Colombia, YYYY-MM-DD) en que se juega el partido.
+export function fechaColPartido(m: Match): string | null {
+  const f = DIA_FECHA[m.dia];
+  if (!f) return null;
+  const [hh] = m.hora.split(':').map(Number);
+  if (hh <= 6) {
+    const d = new Date(`${f}T00:00:00-05:00`);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+  return f;
+}
+
 // Las apuestas cierran 30 minutos antes del inicio del partido.
 export const CIERRE_ANTES_MS = 30 * 60 * 1000;
 
