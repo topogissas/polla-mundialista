@@ -48,7 +48,7 @@ function reducer(s: State, a: Action): State {
         ? { ...s, predicciones: updated, cambios: true }
         : { ...s, resultados: updated, cambios: true };
     }
-    case 'SET_ADMIN': return { ...s, esAdmin: a.val, vista: !a.val && s.vista === 'avisos' ? 'partidos' : s.vista };
+    case 'SET_ADMIN': return { ...s, esAdmin: a.val };
     case 'SET_VISTA': return { ...s, vista: a.val };
     case 'SET_FILTRO': return { ...s, filtroFase: a.val };
     case 'SET_CAMBIOS': return { ...s, cambios: a.val };
