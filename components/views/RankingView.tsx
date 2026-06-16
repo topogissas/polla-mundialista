@@ -54,9 +54,15 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
     try {
       await sb.from('polla_especiales').delete().eq('participante_id', entry.id);
       await sb.from('polla_pronosticos').delete().eq('participante_id', entry.id);
-      const { error } = await sb.from('polla_participantes').delete().eq('id', entry.id);
-      if (error) { toast('Error al borrar: ' + error.message); }
-      else { toast(`✅ Usuario "${entry.nombre}" eliminado`); await cargar(); }
+      // .select() devuelve las filas borradas: si RLS bloquea, llega [] sin error.
+      const { data, error } = await sb.from('polla_participantes').delete().eq('id', entry.id).select();
+      if (error) { toast('Error al borrar: ' + error.message); return; }
+      if (!data || data.length === 0) {
+        toast('⚠️ No se pudo borrar (sin permiso en la base de datos)');
+        return;
+      }
+      toast(`✅ Usuario "${entry.nombre}" eliminado`);
+      await cargar();
     } finally {
       setDeleting(false);
       setConfirmDelete(null);
