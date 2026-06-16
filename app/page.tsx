@@ -88,7 +88,7 @@ export default function Home() {
       }
       toast('✅ Resultados guardados — el ranking se actualizó para todos');
     } else {
-      // Solo se guardan apuestas nuevas: con marcador, no bloqueadas y no cerradas (30 min antes).
+      // Solo se guardan apuestas nuevas: con marcador, no bloqueadas y no cerradas (5 min antes).
       const nuevos = Object.entries(predicciones)
         .filter(([mid, p]) => p.l !== null && p.v !== null && !guardados.includes(mid) && !partidoCerrado(MAP[mid]));
       if (!nuevos.length) { toast('No hay apuestas nuevas para guardar'); return; }

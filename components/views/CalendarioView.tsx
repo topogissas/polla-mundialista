@@ -22,7 +22,7 @@ export default function CalendarioView() {
   return (
     <div>
       <p style={{ fontSize: '.76rem', color: '#5a6b5e', margin: '10px 2px 4px' }}>
-        Todos los partidos del torneo. Puedes apostar los que sigan abiertos (cierran 30 min antes).
+        Todos los partidos del torneo. Puedes apostar los que sigan abiertos (cierran 5 min antes).
       </p>
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '6px 0 4px', WebkitOverflowScrolling: 'touch' as any }}>
         {FASES.map(([f, label]) => (
