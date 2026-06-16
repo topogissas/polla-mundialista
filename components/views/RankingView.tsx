@@ -2,44 +2,37 @@
 import { useEffect, useState, useCallback } from 'react';
 import { sb } from '@/lib/supabase';
 import { useApp } from '@/context/AppContext';
-import { ALL_MATCHES, flag, FASE_NOMBRE } from '@/lib/matches';
+import { ALL_MATCHES } from '@/lib/matches';
 import { calcularPuntos } from '@/lib/scoring';
-import type { RankingEntry, Resultados, Score } from '@/lib/types';
-
-type PredsPorPart = Record<string, Record<string, Score>>;
+import type { RankingEntry, Resultados } from '@/lib/types';
 
 export default function RankingView({ toast }: { toast: (m: string) => void }) {
   const { esAdmin } = useApp();
   const [tabla, setTabla] = useState<RankingEntry[] | null>(null);
-  const [resultados, setResultados] = useState<Resultados>({});
-  const [predsPorPart, setPredsPorPart] = useState<PredsPorPart>({});
   const [confirmDelete, setConfirmDelete] = useState<RankingEntry | null>(null);
   const [confirmReset, setConfirmReset] = useState<RankingEntry | null>(null);
-  const [verApuestas, setVerApuestas] = useState<RankingEntry | null>(null);
   const [busy, setBusy] = useState(false);
 
   const cargar = useCallback(async () => {
     const { data: resData } = await sb.from('polla_resultados').select('*');
-    const res: Resultados = {};
-    (resData || []).forEach((r: any) => { res[r.match_id] = { l: r.goles_local, v: r.goles_visitante }; });
-    setResultados(res);
+    const resultados: Resultados = {};
+    (resData || []).forEach((r: any) => { resultados[r.match_id] = { l: r.goles_local, v: r.goles_visitante }; });
 
     const { data: parts } = await sb.from('polla_participantes').select('id,nombre');
-    if (!parts?.length) { setTabla([]); setPredsPorPart({}); return; }
+    if (!parts?.length) { setTabla([]); return; }
 
     const { data: allPron } = await sb.from('polla_pronosticos').select('*');
-    const porPart: PredsPorPart = {};
+    const porPart: Record<string, Record<string, { l: number; v: number }>> = {};
     (allPron || []).forEach((p: any) => {
       porPart[p.participante_id] = porPart[p.participante_id] || {};
       porPart[p.participante_id][p.match_id] = { l: p.goles_local, v: p.goles_visitante };
     });
-    setPredsPorPart(porPart);
 
     const t: RankingEntry[] = parts.map((p: any) => {
       let total = 0, exactos = 0, jugados = 0;
       const preds = porPart[p.id] || {};
       ALL_MATCHES.forEach(m => {
-        const real = res[m.id];
+        const real = resultados[m.id];
         const pr = preds[m.id];
         if (real?.l !== null && real?.l !== undefined && pr?.l !== null && pr?.l !== undefined) {
           const pts = calcularPuntos(pr, real, m.fase);
@@ -96,9 +89,6 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
   if (!tabla) return <div style={{ textAlign: 'center', padding: 30, color: '#5a6b5e' }}>Calculando ranking…</div>;
   if (!tabla.length) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#5a6b5e' }}>Aún no hay participantes. ¡Invita a tus amigos!</div>;
 
-  const preds = verApuestas ? (predsPorPart[verApuestas.id] || {}) : {};
-  const apuestas = verApuestas ? ALL_MATCHES.filter(m => preds[m.id]?.l !== null && preds[m.id]?.l !== undefined) : [];
-
   return (
     <div style={{ paddingTop: 12 }}>
       {tabla.map((r, i) => {
@@ -116,69 +106,23 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
                 <span style={{ fontSize: '.68rem', fontWeight: 600, color: '#5a6b5e', display: 'block' }}>puntos</span>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => setVerApuestas(r)}
-                style={{ background: '#EDF7EE', border: '1px solid #cfe6d4', color: '#1A6B2F', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
-              >👁 Ver apuestas</button>
-              {esAdmin && (
+            {esAdmin && (
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => setConfirmReset(r)}
                   style={{ background: '#fff8e8', border: '1px solid #f0d68a', color: '#9a7400', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
-                >🔄 Resetear</button>
-              )}
-              {esAdmin && (
+                >🔄 Resetear todas</button>
                 <button
                   onClick={() => setConfirmDelete(r)}
                   style={{ background: '#fff0f0', border: '1px solid #f5a5a5', color: '#c0392b', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
                 >🗑 Borrar</button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         );
       })}
 
-      {/* Modal: ver apuestas de un participante */}
-      {verApuestas && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 200 }}
-          onClick={() => setVerApuestas(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#f4f8f5', borderRadius: '16px 16px 0 0', padding: 18, maxWidth: 600, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h2 style={{ fontSize: '1.1rem', color: '#1A6B2F' }}>Apuestas de {verApuestas.nombre}</h2>
-              <button onClick={() => setVerApuestas(null)} style={{ background: '#fff', border: '1px solid #dfe8e1', borderRadius: 8, padding: '4px 12px', fontSize: '.85rem', fontWeight: 700, cursor: 'pointer', color: '#5a6b5e' }}>Cerrar</button>
-            </div>
-            {!apuestas.length ? (
-              <div style={{ textAlign: 'center', padding: '30px 10px', color: '#5a6b5e', fontSize: '.88rem' }}>Aún no ha hecho ninguna apuesta.</div>
-            ) : (
-              apuestas.map(m => {
-                const pr = preds[m.id];
-                const real = resultados[m.id];
-                const tieneR = real?.l !== null && real?.l !== undefined;
-                const pts = tieneR ? calcularPuntos(pr, real, m.fase) : null;
-                const faseLabel = m.fase === 'grupo' ? ('Grupo ' + m.grupo) : FASE_NOMBRE[m.fase];
-                const color = pts === null ? '#5a6b5e' : pts === 0 ? '#c0392b' : pts === 25 ? '#1A6B2F' : '#27AE60';
-                return (
-                  <div key={m.id} style={{ background: '#fff', borderRadius: 10, padding: '8px 12px', marginBottom: 6, boxShadow: '0 1px 2px rgba(0,0,0,.04)' }}>
-                    <div style={{ fontSize: '.66rem', color: '#5a6b5e', fontWeight: 600, marginBottom: 3 }}>{faseLabel} · {m.dia}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '.85rem', fontWeight: 600 }}>
-                      <span style={{ flex: 1 }}>{flag(m.local)} {m.local}</span>
-                      <span style={{ background: '#EDF7EE', color: '#1A6B2F', borderRadius: 6, padding: '2px 8px', fontWeight: 800 }}>{pr.l}-{pr.v}</span>
-                      <span style={{ flex: 1, textAlign: 'right' }}>{m.visitante} {flag(m.visitante)}</span>
-                    </div>
-                    {tieneR && (
-                      <div style={{ fontSize: '.7rem', textAlign: 'center', marginTop: 4, color, fontWeight: 700 }}>
-                        Real: {real.l}-{real.v} · {pts === 0 ? 'Falló' : pts === 25 ? '+25 (exacto)' : '+15 (ganador)'}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Modal: confirmar reset de apuestas */}
+      {/* Modal: confirmar reset de todas las apuestas */}
       {confirmReset && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200 }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%' }}>

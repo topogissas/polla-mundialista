@@ -33,4 +33,4 @@ export interface RankingEntry {
   jugados: number;
 }
 
-export type Vista = 'partidos' | 'ranking' | 'reglas' | 'avisos';
+export type Vista = 'partidos' | 'ranking' | 'apuestas' | 'reglas' | 'avisos';
