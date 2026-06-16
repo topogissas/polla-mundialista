@@ -62,7 +62,7 @@ export default function MatchCard({ m }: { m: Match }) {
             className="score-in"
             inputMode="numeric"
             maxLength={2}
-            defaultValue={String(lv)}
+            value={String(lv)}
             disabled={!editable}
             onChange={e => handleChange('l', e.target.value)}
           />
@@ -71,7 +71,7 @@ export default function MatchCard({ m }: { m: Match }) {
             className="score-in"
             inputMode="numeric"
             maxLength={2}
-            defaultValue={String(vv)}
+            value={String(vv)}
             disabled={!editable}
             onChange={e => handleChange('v', e.target.value)}
           />

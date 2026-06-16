@@ -1,0 +1,22 @@
+{
+  "name": "Polla Mundial 2026",
+  "short_name": "Polla 2026",
+  "description": "Quiniela de pronósticos del Mundial 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1A6B2F",
+  "theme_color": "#1A6B2F",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
