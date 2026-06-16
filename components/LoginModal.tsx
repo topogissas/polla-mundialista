@@ -22,7 +22,7 @@ export default function LoginModal({ onEntrar }: { onEntrar: (nombre: string) =>
         <button
           onClick={() => {
             onEntrar(inputRef.current?.value.trim() || '');
-            document.getElementById('loginModal')!.style.display = 'none';
+            document.getElementById('loginModal')!.classList.remove('show');
           }}
           style={{ display: 'block', width: '100%', padding: 13, background: '#1A6B2F', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}
         >Entrar a la polla</button>

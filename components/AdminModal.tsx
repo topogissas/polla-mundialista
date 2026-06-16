@@ -10,7 +10,7 @@ export default function AdminModal({ toast }: { toast: (m: string) => void }) {
   function validar() {
     if (passRef.current?.value === ADMIN_PASS) {
       dispatch({ type: 'SET_ADMIN', val: true });
-      document.getElementById('adminModal')!.style.display = 'none';
+      document.getElementById('adminModal')!.classList.remove('show');
       toast('Modo administrador activo');
     } else {
       toast('Clave incorrecta');
@@ -30,7 +30,7 @@ export default function AdminModal({ toast }: { toast: (m: string) => void }) {
           onKeyDown={e => e.key === 'Enter' && validar()}
         />
         <button onClick={validar} style={{ display: 'block', width: '100%', padding: 13, background: '#1A6B2F', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer', marginBottom: 8 }}>Activar</button>
-        <button onClick={() => { document.getElementById('adminModal')!.style.display = 'none'; }} style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#1A6B2F', border: '1px solid #27AE60', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+        <button onClick={() => { document.getElementById('adminModal')!.classList.remove('show'); }} style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#1A6B2F', border: '1px solid #27AE60', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
       </div>
       <style>{`.modal.show { display: flex !important; }`}</style>
     </div>
