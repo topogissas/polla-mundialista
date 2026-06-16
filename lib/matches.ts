@@ -49,10 +49,13 @@ export function inicioPartido(m: Match): Date | null {
   return new Date(`${fecha}T${m.hora.padStart(5, '0')}:00-05:00`);
 }
 
+// Las apuestas cierran 30 minutos antes del inicio del partido.
+export const CIERRE_ANTES_MS = 30 * 60 * 1000;
+
 export function partidoCerrado(m: Match): boolean {
   const ini = inicioPartido(m);
   if (!ini) return false;
-  return Date.now() >= ini.getTime();
+  return Date.now() >= ini.getTime() - CIERRE_ANTES_MS;
 }
 
 export const FASE_NOMBRE: Record<string, string> = {

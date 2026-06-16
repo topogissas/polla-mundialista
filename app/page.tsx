@@ -18,7 +18,7 @@ import { ALL_MATCHES, partidoCerrado } from '@/lib/matches';
 import type { Predicciones, Resultados } from '@/lib/types';
 
 export default function Home() {
-  const { usuario, participanteId, esAdmin, vista, cambios, predicciones, resultados, dispatch } = useApp();
+  const { usuario, participanteId, esAdmin, vista, cambios, predicciones, resultados, guardados, dispatch } = useApp();
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function toast(msg: string) {
@@ -39,6 +39,8 @@ export default function Home() {
     const preds: Predicciones = {};
     (data || []).forEach((p: any) => { preds[p.match_id] = { l: p.goles_local, v: p.goles_visitante }; });
     dispatch({ type: 'SET_PREDICCIONES', data: preds });
+    // Todo lo ya guardado queda BLOQUEADO (una sola apuesta por partido).
+    dispatch({ type: 'SET_GUARDADOS', ids: Object.keys(preds) });
     const { data: esp } = await sb.from('polla_especiales').select('*').eq('participante_id', pid).maybeSingle();
     dispatch({ type: 'SET_ESPECIALES', data: esp ? { campeon: esp.campeon, subcampeon: esp.subcampeon, goleador: esp.goleador } : { campeon: null, subcampeon: null, goleador: null } });
   }
@@ -85,14 +87,16 @@ export default function Home() {
       }
       toast('✅ Resultados guardados — el ranking se actualizó para todos');
     } else {
-      const rows = Object.entries(predicciones)
-        .filter(([mid, p]) => p.l !== null && p.v !== null && !partidoCerrado(MAP[mid]))
-        .map(([mid, p]) => ({ participante_id: participanteId, match_id: mid, goles_local: p.l, goles_visitante: p.v, actualizado_en: new Date().toISOString() }));
-      if (rows.length) {
-        const { error } = await sb.from('polla_pronosticos').upsert(rows, { onConflict: 'participante_id,match_id' });
-        if (error) { toast('Error: ' + error.message); return; }
-      }
-      toast('✅ Pronósticos guardados en la nube');
+      // Solo se guardan apuestas nuevas: con marcador, no bloqueadas y no cerradas (30 min antes).
+      const nuevos = Object.entries(predicciones)
+        .filter(([mid, p]) => p.l !== null && p.v !== null && !guardados.includes(mid) && !partidoCerrado(MAP[mid]));
+      if (!nuevos.length) { toast('No hay apuestas nuevas para guardar'); return; }
+      const rows = nuevos.map(([mid, p]) => ({ participante_id: participanteId, match_id: mid, goles_local: p.l, goles_visitante: p.v, actualizado_en: new Date().toISOString() }));
+      const { error } = await sb.from('polla_pronosticos').upsert(rows, { onConflict: 'participante_id,match_id' });
+      if (error) { toast('Error: ' + error.message); return; }
+      // Una vez guardadas, quedan BLOQUEADAS sin modificación.
+      dispatch({ type: 'ADD_GUARDADOS', ids: nuevos.map(([mid]) => mid) });
+      toast(`✅ ${rows.length} apuesta(s) guardada(s) y bloqueada(s)`);
     }
   }
 

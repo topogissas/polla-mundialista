@@ -9,15 +9,14 @@ export default function ReglasView() {
         <h3 style={h3}>📋 Cómo se gana puntos</h3>
         <div>
           {[
-            ['🎯 Marcador exacto', '#1A6B2F', '5 pts'],
-            ['📊 Resultado + diferencia', '#27AE60', '3 pts'],
-            ['✅ Solo el ganador/empate', '#9CCC65', '1 pt'],
+            ['🎯 Marcador exacto', '#1A6B2F', '25 pts'],
+            ['✅ Acertaste el ganador (o empate)', '#27AE60', '15 pts'],
             ['❌ Fallaste', '#cfd8d2', '0 pts'],
           ].map(([label, color, pts]) => (
             <div key={label as string} style={row}><span>{label}</span><span style={tag(color as string)}>{pts}</span></div>
           ))}
         </div>
-        <p style={{ marginTop: 12, fontSize: '.82rem', color: '#5a6b5e' }}><b>Eliminatorias valen doble.</b> Un marcador exacto en la final = 10 pts.</p>
+        <p style={{ marginTop: 12, fontSize: '.82rem', color: '#5a6b5e' }}>Mismo puntaje en <b>todas las fases</b>.</p>
       </div>
       <div style={card}>
         <h3 style={h3}>⭐ Especiales (al final)</h3>
@@ -30,10 +29,10 @@ export default function ReglasView() {
       <div style={card}>
         <h3 style={h3}>ℹ️ Cómo funciona</h3>
         <p style={{ fontSize: '.85rem', color: '#5a6b5e' }}>
-          1. Cada amigo entra con su nombre y predice.<br />
-          2. <b>Cada partido se cierra solo</b> a su hora de inicio: no se puede pronosticar con el juego empezado.<br />
-          3. El admin carga el resultado real tras cada partido.<br />
-          4. El ranking se recalcula para todos.<br /><br />
+          1. Cada amigo entra con su nombre y apuesta.<br />
+          2. Al <b>Guardar</b> confirmas con tu nombre y tus apuestas quedan <b>bloqueadas</b> (una sola apuesta por partido, sin cambios).<br />
+          3. Puedes apostar hasta <b>30 minutos antes</b> de cada partido; luego se cierra.<br />
+          4. El admin carga el resultado real tras cada partido y el ranking se recalcula para todos.<br /><br />
           Horas en <b>hora de Colombia (UTC-5)</b>. Los &quot;Repechaje&quot;/&quot;Por definir&quot; se completan cuando FIFA confirme los equipos.
         </p>
       </div>

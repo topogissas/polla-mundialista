@@ -5,29 +5,30 @@ import { flag, FASE_NOMBRE, partidoCerrado } from '@/lib/matches';
 import type { Match } from '@/lib/types';
 
 export default function MatchCard({ m }: { m: Match }) {
-  const { esAdmin, predicciones, resultados, dispatch } = useApp();
+  const { esAdmin, predicciones, resultados, guardados, dispatch } = useApp();
   const esKnock = m.fase !== 'grupo';
   const faseLabel = esKnock ? FASE_NOMBRE[m.fase] : ('Grupo ' + m.grupo);
   const real = resultados[m.id] || { l: null, v: null };
   const pred = predicciones[m.id] || { l: null, v: null };
   const tieneR = real.l !== null && real.v !== null;
   const cerrado = partidoCerrado(m);
-  const editable = esAdmin ? true : (!tieneR && !cerrado);
+  const bloqueado = guardados.includes(m.id); // apuesta ya guardada → sin cambios
+  const editable = esAdmin ? true : (!tieneR && !cerrado && !bloqueado);
   const lv = esAdmin ? (real.l ?? '') : (pred.l ?? '');
   const vv = esAdmin ? (real.v ?? '') : (pred.v ?? '');
 
   let resultLine: React.ReactNode = null;
   if (tieneR && !esAdmin) {
     const pts = calcularPuntos(pred, real, m.fase);
-    const mult = m.fase === 'grupo' ? 1 : 2;
     if (pred.l !== null) {
-      const color = pts === 0 ? '#cfd8d2' : pts! >= 5 * mult ? '#1A6B2F' : pts! >= 3 * mult ? '#27AE60' : '#9CCC65';
+      const color = pts === 0 ? '#cfd8d2' : pts === 25 ? '#1A6B2F' : '#27AE60';
+      const etiqueta = pts === 0 ? 'Fallaste' : pts === 25 ? 'Marcador exacto +25' : 'Acertaste ganador +15';
       resultLine = <div style={{ textAlign: 'center', fontSize: '.74rem', marginTop: 8, fontWeight: 600, padding: 4, borderRadius: 7, background: color, color: '#fff' }}>
-        Real: {real.l}-{real.v} · Tú: {pred.l}-{pred.v} · <b>{pts === 0 ? 'Fallaste' : '+' + pts + ' pts'}</b>
+        Real: {real.l}-{real.v} · Tú: {pred.l}-{pred.v} · <b>{etiqueta}</b>
       </div>;
     } else {
       resultLine = <div style={{ textAlign: 'center', fontSize: '.74rem', marginTop: 8, fontWeight: 600, padding: 4, borderRadius: 7, background: '#cfd8d2', color: '#fff' }}>
-        Real: {real.l}-{real.v} · No pronosticaste
+        Real: {real.l}-{real.v} · No apostaste
       </div>;
     }
   } else if (tieneR && esAdmin) {
@@ -35,9 +36,13 @@ export default function MatchCard({ m }: { m: Match }) {
       Guardado: {real.l}-{real.v}
     </div>;
   } else if (!editable && !esAdmin) {
-    resultLine = cerrado && pred.l !== null
-      ? <div style={{ textAlign: 'center', fontSize: '.7rem', color: '#5a6b5e', marginTop: 6 }}>🔒 Cerrado · tu pronóstico: {pred.l}-{pred.v}</div>
-      : <div style={{ textAlign: 'center', fontSize: '.7rem', color: '#5a6b5e', marginTop: 6 }}>🔒 {cerrado ? 'Cerrado · el partido ya empezó' : 'Cerrado'}</div>;
+    if (bloqueado && pred.l !== null) {
+      resultLine = <div style={{ textAlign: 'center', fontSize: '.7rem', color: '#1A6B2F', marginTop: 6, fontWeight: 600 }}>🔒 Apuesta guardada: {pred.l}-{pred.v} · sin cambios</div>;
+    } else if (cerrado && pred.l !== null) {
+      resultLine = <div style={{ textAlign: 'center', fontSize: '.7rem', color: '#5a6b5e', marginTop: 6 }}>🔒 Cerrado · tu apuesta: {pred.l}-{pred.v}</div>;
+    } else {
+      resultLine = <div style={{ textAlign: 'center', fontSize: '.7rem', color: '#5a6b5e', marginTop: 6 }}>🔒 Cerrado · cierra 30 min antes del partido</div>;
+    }
   }
 
   function handleChange(side: 'l' | 'v', raw: string) {

@@ -37,8 +37,7 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
           const pts = calcularPuntos(pr, real, m.fase);
           if (pts !== null) {
             total += pts; jugados++;
-            const mult = m.fase === 'grupo' ? 1 : 2;
-            if (pts >= 5 * mult) exactos++;
+            if (pts === 25) exactos++;
           }
         }
       });
