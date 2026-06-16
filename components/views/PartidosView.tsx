@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { ALL_MATCHES, GRUPOS_LETRAS, inicioPartido, flag } from '@/lib/matches';
+import { ALL_MATCHES, GRUPOS_LETRAS, inicioPartido, flag, partidoCerrado } from '@/lib/matches';
 import MatchCard from '@/components/MatchCard';
 
 const FASES = [
@@ -54,7 +54,7 @@ function ProximoPartido({ now }: { now: number }) {
 }
 
 export default function PartidosView({ toast }: { toast: (m: string) => void }) {
-  const { usuario, filtroFase, dispatch } = useApp();
+  const { usuario, esAdmin, filtroFase, dispatch } = useApp();
   const [now, setNow] = useState<number>(() => Date.now());
 
   // Refresca cada minuto: mantiene el contador y los candados de "Cerrado" al día.
@@ -67,8 +67,22 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#5a6b5e', fontSize: '.9rem' }}>👋 Toca <b>&quot;Entrar&quot;</b> arriba a la derecha para empezar.</div>;
   }
   let lista = ALL_MATCHES;
+  // Para usuarios, ocultar los partidos que ya no se pueden apostar (cerrados).
+  // El admin ve todos para poder cargar resultados.
+  if (!esAdmin) lista = lista.filter(m => !partidoCerrado(m));
   if (filtroFase === 'grupo') lista = lista.filter(m => m.fase === 'grupo');
   else if (filtroFase !== 'todos') lista = lista.filter(m => m.fase === filtroFase);
+
+  if (!esAdmin && lista.length === 0) {
+    return (
+      <div>
+        <ProximoPartido now={now} />
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#5a6b5e', fontSize: '.9rem' }}>
+          No hay partidos abiertos para apostar en este momento. Revisa el <b>Ranking</b> 🏆
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
