@@ -23,7 +23,7 @@ export default function ReglasView() {
         <p style={{ fontSize: '.85rem', color: '#5a6b5e' }}>
           1. Cada amigo entra con su nombre y apuesta.<br />
           2. Al <b>Guardar</b> confirmas con tu nombre y tus apuestas quedan <b>bloqueadas</b> (una sola apuesta por partido, sin cambios).<br />
-          3. Puedes apostar hasta <b>30 minutos antes</b> de cada partido; luego se cierra.<br />
+          3. Puedes apostar hasta <b>5 minutos antes</b> de cada partido; luego se cierra.<br />
           4. El admin carga el resultado real tras cada partido y el ranking se recalcula para todos.<br /><br />
           Horas en <b>hora de Colombia (UTC-5)</b>. Los &quot;Repechaje&quot;/&quot;Por definir&quot; se completan cuando FIFA confirme los equipos.
         </p>

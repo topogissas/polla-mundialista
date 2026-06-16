@@ -41,7 +41,7 @@ export default function MatchCard({ m }: { m: Match }) {
     } else if (cerrado && pred.l !== null) {
       resultLine = <div style={{ textAlign: 'center', fontSize: '.7rem', color: '#5a6b5e', marginTop: 6 }}>🔒 Cerrado · tu apuesta: {pred.l}-{pred.v}</div>;
     } else {
-      resultLine = <div style={{ textAlign: 'center', fontSize: '.7rem', color: '#5a6b5e', marginTop: 6 }}>🔒 Cerrado · cierra 30 min antes del partido</div>;
+      resultLine = <div style={{ textAlign: 'center', fontSize: '.7rem', color: '#5a6b5e', marginTop: 6 }}>🔒 Cerrado · cierra 5 min antes del partido</div>;
     }
   }
 

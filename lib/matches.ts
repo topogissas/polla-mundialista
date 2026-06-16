@@ -65,8 +65,8 @@ export function fechaColPartido(m: Match): string | null {
   return f;
 }
 
-// Las apuestas cierran 30 minutos antes del inicio del partido.
-export const CIERRE_ANTES_MS = 30 * 60 * 1000;
+// Las apuestas cierran 5 minutos antes del inicio del partido.
+export const CIERRE_ANTES_MS = 5 * 60 * 1000;
 
 export function partidoCerrado(m: Match): boolean {
   const ini = inicioPartido(m);
