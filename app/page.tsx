@@ -12,6 +12,7 @@ import SaveBar from '@/components/SaveBar';
 import PartidosView from '@/components/views/PartidosView';
 import RankingView from '@/components/views/RankingView';
 import ApuestasView from '@/components/views/ApuestasView';
+import CalendarioView from '@/components/views/CalendarioView';
 import ReglasView from '@/components/views/ReglasView';
 import AvisosView from '@/components/views/AvisosView';
 import { ALL_MATCHES, partidoCerrado } from '@/lib/matches';
@@ -117,6 +118,7 @@ export default function Home() {
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 14px 90px' }}>
         <TabBar />
         {vista === 'partidos' && <PartidosView toast={toast} />}
+        {vista === 'calendario' && <CalendarioView />}
         {vista === 'ranking' && <RankingView toast={toast} />}
         {vista === 'apuestas' && <ApuestasView toast={toast} />}
         {vista === 'reglas' && <ReglasView />}
