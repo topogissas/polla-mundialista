@@ -189,8 +189,12 @@ export default function GruposModal({ onCerrar, onCambiarGrupo }: {
     setBusy(true);
     try {
       const codigo = nuevoCodigo.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      const { error } = await sb.from('grupos').insert({ nombre: nuevoNombre.trim(), codigo, pin: nuevoPin });
+      const { data: nuevoGrupo, error } = await sb.from('grupos').insert({ nombre: nuevoNombre.trim(), codigo, pin: nuevoPin }).select('id').single();
       if (error) { alert('Error: ' + error.message); return; }
+      // Auto-agregar al admin como miembro activo del nuevo grupo
+      if (nuevoGrupo && participanteId) {
+        await sb.from('grupo_miembros').insert({ grupo_id: nuevoGrupo.id, participante_id: participanteId, estado: 'activo', aprobado_en: new Date().toISOString() });
+      }
       // Si se creó desde una solicitud, marcarla como aprobada
       if (crearDesde) {
         await sb.from('solicitudes_grupos').update({ estado: 'aprobado' }).eq('id', crearDesde.id);
