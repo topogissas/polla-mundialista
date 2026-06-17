@@ -84,6 +84,15 @@ async function fetchDay(dateStr) {
   return (data.events || []).filter((e) => e.strLeague === 'FIFA World Cup');
 }
 
+async function fetchLive() {
+  try {
+    const r = await fetch(`${TSDB}/eventslive.php`);
+    if (!r.ok) return [];
+    const data = await r.json();
+    return (data.events || []).filter((e) => e.strLeague === 'FIFA World Cup');
+  } catch { return []; }
+}
+
 async function enviarPush(filas) {
   if (!VAPID_PRIVATE || !filas.length) return;
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
@@ -126,11 +135,13 @@ async function main() {
     return ymd(d);
   });
 
-  const eventos = [];
-  for (const dia of dias) {
-    try { eventos.push(...(await fetchDay(dia))); }
-    catch (e) { console.error('Error consultando', dia, e.message); }
-  }
+  const [liveEvs, ...dayEvs] = await Promise.all([
+    fetchLive(),
+    ...dias.map(d => fetchDay(d).catch(e => { console.error('Error consultando', d, e.message); return []; })),
+  ]);
+
+  // Live events toman prioridad; el resto llena huecos
+  const eventos = [...liveEvs, ...dayEvs.flat()];
 
   const filas = [];
   const vistos = new Set();
