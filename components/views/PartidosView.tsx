@@ -139,7 +139,7 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     );
   }
 
-  // ── Vista usuario: todos los partidos de hoy; si no hay, los del próximo día con partidos abiertos ──
+  // ── Vista usuario: partidos de hoy Y de mañana (para apostar los de madrugada antes de dormir) ──
   const fmt = (ts: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date(ts));
   const hoy = fmt(now);
   const manana = fmt(now + 86400000);
@@ -149,18 +149,29 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     .filter((x): x is { m: typeof x.m; ini: Date; fecha: string } => x.ini !== null && x.fecha !== null)
     .sort((a, b) => a.ini.getTime() - b.ini.getTime());
 
-  // Primero intentamos mostrar todos los de hoy (abiertos Y cerrados)
   const delHoy = todosMapeados.filter(x => x.fecha === hoy).map(x => x.m);
+  const delManana = todosMapeados.filter(x => x.fecha === manana).map(x => x.m);
 
-  if (delHoy.length) {
+  const tituloEstilo = { fontWeight: 800, color: '#2A398D', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #3CAC3B' } as const;
+
+  // Si hay partidos hoy o mañana, mostramos ambos bloques.
+  if (delHoy.length || delManana.length) {
     return (
       <div>
         <ProximoPartido now={now} />
         <LiveNow now={now} resultados={resultados} />
-        <div style={{ fontWeight: 800, color: '#2A398D', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #3CAC3B' }}>
-          📅 Partidos de hoy
-        </div>
-        {delHoy.map(m => <MatchCard key={m.id} m={m} />)}
+        {delHoy.length > 0 && (
+          <>
+            <div style={tituloEstilo}>📅 Partidos de hoy</div>
+            {delHoy.map(m => <MatchCard key={m.id} m={m} />)}
+          </>
+        )}
+        {delManana.length > 0 && (
+          <>
+            <div style={tituloEstilo}>🌙 Partidos de mañana</div>
+            {delManana.map(m => <MatchCard key={m.id} m={m} />)}
+          </>
+        )}
         <div style={{ textAlign: 'center', fontSize: '.76rem', color: '#474A4A', marginTop: 14 }}>
           Lo que apostaron todos está en <b>Historial</b> 📜
         </div>
@@ -168,7 +179,7 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     );
   }
 
-  // Si no hay partidos hoy, mostramos los del próximo día con partidos abiertos
+  // Si no hay partidos ni hoy ni mañana, mostramos el próximo día con partidos abiertos
   const proximoAbierto = todosMapeados.find(x => !partidoCerrado(x.m));
   if (!proximoAbierto) {
     return (
@@ -183,14 +194,11 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
 
   const targetFecha = proximoAbierto.fecha;
   const delDia = todosMapeados.filter(x => x.fecha === targetFecha).map(x => x.m);
-  const titulo = targetFecha === manana ? '📅 Partidos de mañana' : `📅 Partidos · ${delDia[0].dia}`;
 
   return (
     <div>
       <ProximoPartido now={now} />
-      <div style={{ fontWeight: 800, color: '#2A398D', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #3CAC3B' }}>
-        {titulo}
-      </div>
+      <div style={tituloEstilo}>📅 Próximos partidos · {delDia[0].dia}</div>
       {delDia.map(m => <MatchCard key={m.id} m={m} />)}
       <div style={{ textAlign: 'center', fontSize: '.76rem', color: '#474A4A', marginTop: 14 }}>
         Lo que apostaron todos está en <b>Historial</b> 📜
