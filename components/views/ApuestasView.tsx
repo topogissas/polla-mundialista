@@ -139,17 +139,22 @@ function MisResultados() {
 // Admin view: all bets per match, filtered by group
 export default function ApuestasView({ toast }: { toast: (m: string) => void }) {
   const { esAdmin, grupoId, formatoHora, usuario } = useApp();
+  const [vistaAdmin, setVistaAdmin] = useState(false);
 
-  // Non-admin: show personal summary
-  if (!esAdmin) {
-    if (!usuario) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Entra primero para ver tus resultados.</div>;
-    return <MisResultados />;
-  }
+  if (!usuario) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Entra primero para ver tus resultados.</div>;
 
-  return <AdminApuestasView toast={toast} grupoId={grupoId} formatoHora={formatoHora} />;
+  const toggleBtn = (
+    <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+      <button onClick={() => setVistaAdmin(false)} style={{ flex: 1, padding: '7px 0', borderRadius: 9, fontWeight: 700, fontSize: '.8rem', cursor: 'pointer', border: 'none', background: !vistaAdmin ? '#2A398D' : '#EEF0F9', color: !vistaAdmin ? '#fff' : '#474A4A' }}>Mis resultados</button>
+      <button onClick={() => setVistaAdmin(true)} style={{ flex: 1, padding: '7px 0', borderRadius: 9, fontWeight: 700, fontSize: '.8rem', cursor: 'pointer', border: 'none', background: vistaAdmin ? '#2A398D' : '#EEF0F9', color: vistaAdmin ? '#fff' : '#474A4A' }}>Ver todos</button>
+    </div>
+  );
+
+  if (!vistaAdmin) return <div style={{ paddingTop: 4 }}>{toggleBtn}<MisResultados /></div>;
+  return <div style={{ paddingTop: 4 }}>{toggleBtn}<AdminApuestasView toast={toast} grupoId={grupoId} formatoHora={formatoHora} esAdmin={esAdmin} /></div>;
 }
 
-function AdminApuestasView({ toast, grupoId, formatoHora }: { toast: (m: string) => void; grupoId: string | null; formatoHora: '12h' | '24h' }) {
+function AdminApuestasView({ toast, grupoId, formatoHora, esAdmin = false }: { toast: (m: string) => void; grupoId: string | null; formatoHora: '12h' | '24h'; esAdmin?: boolean }) {
   const [resultados, setResultados] = useState<Resultados>({});
   const [porMatch, setPorMatch] = useState<Record<string, Apuesta[]>>({});
   const [loading, setLoading] = useState(true);
@@ -249,7 +254,7 @@ function AdminApuestasView({ toast, grupoId, formatoHora }: { toast: (m: string)
                   <span style={{ flex: 1, fontSize: '.85rem', fontWeight: 600 }}>{a.nombre}</span>
                   <span style={{ background: '#EEF0F9', color: '#2A398D', borderRadius: 6, padding: '2px 10px', fontWeight: 800, fontSize: '.85rem' }}>{a.score.l}-{a.score.v}</span>
                   {tieneR && <span style={{ fontSize: '.72rem', fontWeight: 700, color: etqColor, width: 46, textAlign: 'right' }}>{etiqueta}</span>}
-                  <button onClick={() => borrarApuesta(a.pid, m.id, a.nombre)} disabled={busy} title="Borrar esta apuesta" style={{ background: '#fff0f0', border: '1px solid #f5a5a5', color: '#c0392b', borderRadius: 7, padding: '3px 8px', fontSize: '.72rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer' }}>🗑</button>
+                  {esAdmin && <button onClick={() => borrarApuesta(a.pid, m.id, a.nombre)} disabled={busy} title="Borrar esta apuesta" style={{ background: '#fff0f0', border: '1px solid #f5a5a5', color: '#c0392b', borderRadius: 7, padding: '3px 8px', fontSize: '.72rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer' }}>🗑</button>}
                 </div>
               );
             })}
