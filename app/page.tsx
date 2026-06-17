@@ -162,34 +162,43 @@ export default function Home() {
   }
 
   useEffect(() => {
-    cargarResultados();
-    const u = localStorage.getItem('polla_user');
-    const id = localStorage.getItem('polla_id');
-    const gid = localStorage.getItem('polla_grupo_id');
-    const gnombre = localStorage.getItem('polla_grupo_nombre');
-    if (u && id) {
+    async function init() {
+      cargarResultados();
+      const u = localStorage.getItem('polla_user');
+      const id = localStorage.getItem('polla_id');
+      const gid = localStorage.getItem('polla_grupo_id');
+      const gnombre = localStorage.getItem('polla_grupo_nombre');
+      if (!u || !id) return;
       dispatch({ type: 'SET_USER', nombre: u, id });
-      if (gid && gnombre) {
+
+      // Verificar membresías activas (nunca confiar en localStorage ciegamente)
+      const gruposActivos = await cargarGruposDelUsuario(id);
+      dispatch({ type: 'SET_GRUPOS', data: gruposActivos });
+
+      const autoSelect = (gs: typeof gruposActivos) => {
+        if (gs.length === 1) {
+          const g = gs[0];
+          dispatch({ type: 'SET_GRUPO', id: g.id, nombre: g.nombre });
+          localStorage.setItem('polla_grupo_id', g.id);
+          localStorage.setItem('polla_grupo_nombre', g.nombre);
+          cargarMisPredicciones(id, g.id);
+        } else if (gs.length > 1) {
+          setMostrarSelectorGrupo(true);
+        }
+      };
+
+      if (gid && gnombre && gruposActivos.some(g => g.id === gid)) {
+        // Membresía sigue activa
         dispatch({ type: 'SET_GRUPO', id: gid, nombre: gnombre });
         cargarMisPredicciones(id, gid);
-        // Also restore grupos list in background
-        cargarGruposDelUsuario(id).then(gs => dispatch({ type: 'SET_GRUPOS', data: gs }));
       } else {
-        // No saved group — load groups and let user select
-        cargarGruposDelUsuario(id).then(gs => {
-          dispatch({ type: 'SET_GRUPOS', data: gs });
-          if (gs.length === 1) {
-            const g = gs[0];
-            dispatch({ type: 'SET_GRUPO', id: g.id, nombre: g.nombre });
-            localStorage.setItem('polla_grupo_id', g.id);
-            localStorage.setItem('polla_grupo_nombre', g.nombre);
-            cargarMisPredicciones(id, g.id);
-          } else if (gs.length > 1) {
-            setMostrarSelectorGrupo(true);
-          }
-        });
+        // Membresía revocada o no existe → limpiar y re-seleccionar
+        localStorage.removeItem('polla_grupo_id');
+        localStorage.removeItem('polla_grupo_nombre');
+        autoSelect(gruposActivos);
       }
     }
+    init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
