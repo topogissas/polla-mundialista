@@ -7,7 +7,7 @@ import { calcularPuntos } from '@/lib/scoring';
 import type { RankingEntry, Resultados } from '@/lib/types';
 
 export default function RankingView({ toast }: { toast: (m: string) => void }) {
-  const { esAdmin } = useApp();
+  const { esAdmin, grupoId, grupoNombre } = useApp();
   const [tabla, setTabla] = useState<RankingEntry[] | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<RankingEntry | null>(null);
   const [confirmReset, setConfirmReset] = useState<RankingEntry | null>(null);
@@ -18,17 +18,32 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
     const resultados: Resultados = {};
     (resData || []).forEach((r: any) => { resultados[r.match_id] = { l: r.goles_local, v: r.goles_visitante }; });
 
-    const { data: parts } = await sb.from('polla_participantes').select('id,nombre');
-    if (!parts?.length) { setTabla([]); return; }
+    // Get members of current group (or all if no group / admin without group)
+    let memberIds: Set<string> | null = null;
+    if (grupoId) {
+      const { data: miembros } = await sb.from('grupo_miembros')
+        .select('participante_id')
+        .eq('grupo_id', grupoId)
+        .eq('estado', 'activo');
+      memberIds = new Set((miembros || []).map((m: any) => m.participante_id));
+    }
 
-    const { data: allPron } = await sb.from('polla_pronosticos').select('*');
+    const { data: parts } = await sb.from('polla_participantes').select('id,nombre');
+    const filteredParts = (parts || []).filter((p: any) => !memberIds || memberIds.has(p.id));
+    if (!filteredParts.length) { setTabla([]); return; }
+
+    // Filter pronosticos by grupo_id
+    let pronQuery = sb.from('polla_pronosticos').select('*');
+    if (grupoId) pronQuery = pronQuery.eq('grupo_id', grupoId);
+    const { data: allPron } = await pronQuery;
+
     const porPart: Record<string, Record<string, { l: number; v: number }>> = {};
     (allPron || []).forEach((p: any) => {
       porPart[p.participante_id] = porPart[p.participante_id] || {};
       porPart[p.participante_id][p.match_id] = { l: p.goles_local, v: p.goles_visitante };
     });
 
-    const t: RankingEntry[] = parts.map((p: any) => {
+    const t: RankingEntry[] = filteredParts.map((p: any) => {
       let total = 0, exactos = 0, jugados = 0;
       const preds = porPart[p.id] || {};
       ALL_MATCHES.forEach(m => {
@@ -45,7 +60,7 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
       return { id: p.id, nombre: p.nombre, total, exactos, jugados };
     }).sort((a, b) => b.total - a.total || b.exactos - a.exactos);
     setTabla(t);
-  }, []);
+  }, [grupoId]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -54,43 +69,37 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
     try {
       await sb.from('polla_especiales').delete().eq('participante_id', entry.id);
       await sb.from('polla_pronosticos').delete().eq('participante_id', entry.id);
-      // .select() devuelve las filas borradas: si RLS bloquea, llega [] sin error.
       const { data, error } = await sb.from('polla_participantes').delete().eq('id', entry.id).select();
       if (error) { toast('Error al borrar: ' + error.message); return; }
-      if (!data || data.length === 0) {
-        toast('⚠️ No se pudo borrar (sin permiso en la base de datos)');
-        return;
-      }
+      if (!data || data.length === 0) { toast('⚠️ No se pudo borrar (sin permiso en la base de datos)'); return; }
       toast(`✅ Usuario "${entry.nombre}" eliminado`);
       await cargar();
-    } finally {
-      setBusy(false);
-      setConfirmDelete(null);
-    }
+    } finally { setBusy(false); setConfirmDelete(null); }
   }
 
   async function resetearApuestas(entry: RankingEntry) {
     setBusy(true);
     try {
-      const { data, error } = await sb.from('polla_pronosticos').delete().eq('participante_id', entry.id).select();
+      let query = sb.from('polla_pronosticos').delete().eq('participante_id', entry.id);
+      if (grupoId) query = (query as any).eq('grupo_id', grupoId);
+      const { data, error } = await (query as any).select();
       if (error) { toast('Error: ' + error.message); return; }
-      if (!data || data.length === 0) {
-        toast('Ese usuario no tiene apuestas para borrar');
-        return;
-      }
+      if (!data || data.length === 0) { toast('Ese usuario no tiene apuestas para borrar'); return; }
       toast(`✅ Apuestas de "${entry.nombre}" borradas — puede volver a apostar`);
       await cargar();
-    } finally {
-      setBusy(false);
-      setConfirmReset(null);
-    }
+    } finally { setBusy(false); setConfirmReset(null); }
   }
 
   if (!tabla) return <div style={{ textAlign: 'center', padding: 30, color: '#474A4A' }}>Calculando ranking…</div>;
-  if (!tabla.length) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Aún no hay participantes. ¡Invita a tus amigos!</div>;
+  if (!tabla.length) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Aún no hay participantes en este grupo. ¡Invita a tus colegas!</div>;
 
   return (
     <div style={{ paddingTop: 12 }}>
+      {grupoNombre && (
+        <div style={{ textAlign: 'center', fontSize: '.78rem', color: '#3CAC3B', fontWeight: 700, marginBottom: 10 }}>
+          🏆 {grupoNombre}
+        </div>
+      )}
       {tabla.map((r, i) => {
         const med = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : String(i + 1);
         return (
@@ -108,60 +117,36 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
             </div>
             {esAdmin && (
               <div style={{ display: 'flex', gap: 6, marginTop: 8, justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => setConfirmReset(r)}
-                  style={{ background: '#fff8e8', border: '1px solid #f0d68a', color: '#9a7400', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
-                >🔄 Resetear todas</button>
-                <button
-                  onClick={() => setConfirmDelete(r)}
-                  style={{ background: '#fff0f0', border: '1px solid #f5a5a5', color: '#c0392b', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
-                >🗑 Borrar</button>
+                <button onClick={() => setConfirmReset(r)} style={{ background: '#fff8e8', border: '1px solid #f0d68a', color: '#9a7400', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}>🔄 Resetear</button>
+                <button onClick={() => setConfirmDelete(r)} style={{ background: '#fff0f0', border: '1px solid #f5a5a5', color: '#c0392b', borderRadius: 8, padding: '5px 10px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}>🗑 Borrar</button>
               </div>
             )}
           </div>
         );
       })}
 
-      {/* Modal: confirmar reset de todas las apuestas */}
       {confirmReset && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200 }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%' }}>
             <h2 style={{ fontSize: '1.1rem', color: '#9a7400', marginBottom: 8 }}>¿Resetear apuestas?</h2>
             <p style={{ fontSize: '.88rem', color: '#474A4A', marginBottom: 18 }}>
-              Se borrarán <b>todas las apuestas</b> de <b>{confirmReset.nombre}</b> (no se borra el usuario). Podrá volver a apostar los partidos que sigan abiertos.
+              Se borrarán <b>todas las apuestas</b> de <b>{confirmReset.nombre}</b> en este grupo. Podrá volver a apostar.
             </p>
-            <button
-              onClick={() => resetearApuestas(confirmReset)}
-              disabled={busy}
-              style={{ display: 'block', width: '100%', padding: 13, background: '#D4A017', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', marginBottom: 8, opacity: busy ? .6 : 1 }}
-            >{busy ? 'Borrando…' : 'Sí, resetear'}</button>
-            <button
-              onClick={() => setConfirmReset(null)}
-              disabled={busy}
-              style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#2A398D', border: '1px solid #3CAC3B', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}
-            >Cancelar</button>
+            <button onClick={() => resetearApuestas(confirmReset)} disabled={busy} style={{ display: 'block', width: '100%', padding: 13, background: '#D4A017', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', marginBottom: 8, opacity: busy ? .6 : 1 }}>{busy ? 'Borrando…' : 'Sí, resetear'}</button>
+            <button onClick={() => setConfirmReset(null)} disabled={busy} style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#2A398D', border: '1px solid #3CAC3B', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
           </div>
         </div>
       )}
 
-      {/* Modal: confirmar borrar usuario */}
       {confirmDelete && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200 }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%' }}>
             <h2 style={{ fontSize: '1.1rem', color: '#c0392b', marginBottom: 8 }}>¿Borrar usuario?</h2>
             <p style={{ fontSize: '.88rem', color: '#474A4A', marginBottom: 18 }}>
-              Se eliminará a <b>{confirmDelete.nombre}</b> junto con todos sus pronósticos y especiales. Esta acción no se puede deshacer.
+              Se eliminará a <b>{confirmDelete.nombre}</b> junto con todos sus pronósticos. Esta acción no se puede deshacer.
             </p>
-            <button
-              onClick={() => borrarParticipante(confirmDelete)}
-              disabled={busy}
-              style={{ display: 'block', width: '100%', padding: 13, background: '#c0392b', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', marginBottom: 8, opacity: busy ? .6 : 1 }}
-            >{busy ? 'Borrando…' : 'Sí, borrar'}</button>
-            <button
-              onClick={() => setConfirmDelete(null)}
-              disabled={busy}
-              style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#2A398D', border: '1px solid #3CAC3B', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}
-            >Cancelar</button>
+            <button onClick={() => borrarParticipante(confirmDelete)} disabled={busy} style={{ display: 'block', width: '100%', padding: 13, background: '#c0392b', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', marginBottom: 8, opacity: busy ? .6 : 1 }}>{busy ? 'Borrando…' : 'Sí, borrar'}</button>
+            <button onClick={() => setConfirmDelete(null)} disabled={busy} style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#2A398D', border: '1px solid #3CAC3B', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
           </div>
         </div>
       )}

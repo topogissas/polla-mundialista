@@ -4,8 +4,9 @@ import { sb } from '@/lib/supabase';
 import { SELECCIONES, flag } from '@/lib/matches';
 
 export default function EspecialesView({ toast }: { toast: (m: string) => void }) {
-  const { usuario, participanteId, especiales, dispatch } = useApp();
+  const { usuario, participanteId, grupoId, especiales, dispatch } = useApp();
   if (!usuario) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Entra primero para elegir tus especiales.</div>;
+  if (!grupoId) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Selecciona un grupo para guardar tus especiales.</div>;
 
   const opts = SELECCIONES.map(s => <option key={s} value={s}>{flag(s)} {s}</option>);
 
@@ -14,8 +15,8 @@ export default function EspecialesView({ toast }: { toast: (m: string) => void }
     const subcampeon = (document.getElementById('esp-subcampeon') as HTMLSelectElement).value || null;
     const goleador = (document.getElementById('esp-goleador') as HTMLSelectElement).value || null;
     const { error } = await sb.from('polla_especiales').upsert(
-      { participante_id: participanteId, campeon, subcampeon, goleador, actualizado_en: new Date().toISOString() },
-      { onConflict: 'participante_id' }
+      { participante_id: participanteId, grupo_id: grupoId, campeon, subcampeon, goleador, actualizado_en: new Date().toISOString() },
+      { onConflict: 'participante_id,grupo_id' }
     );
     if (error) { toast('Error: ' + error.message); return; }
     dispatch({ type: 'SET_ESPECIALES', data: { campeon, subcampeon, goleador } });

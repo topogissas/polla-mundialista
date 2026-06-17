@@ -34,3 +34,10 @@ export interface RankingEntry {
 }
 
 export type Vista = 'partidos' | 'calendario' | 'ranking' | 'apuestas' | 'reglas' | 'avisos';
+
+export interface Grupo {
+  id: string;
+  nombre: string;
+  codigo: string;
+  descripcion: string | null;
+}

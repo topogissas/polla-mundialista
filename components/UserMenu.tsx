@@ -3,8 +3,8 @@ import { useApp } from '@/context/AppContext';
 import { ALL_MATCHES } from '@/lib/matches';
 import { calcularPuntos } from '@/lib/scoring';
 
-export default function UserMenu({ onSalir }: { onSalir: () => void }) {
-  const { usuario, predicciones, resultados, esAdmin, formatoHora, dispatch } = useApp();
+export default function UserMenu({ onSalir, onMisGrupos }: { onSalir: () => void; onMisGrupos: () => void }) {
+  const { usuario, predicciones, resultados, esAdmin, formatoHora, grupoNombre, dispatch } = useApp();
 
   let total = 0, exactos = 0, jugados = 0, hechos = 0;
   ALL_MATCHES.forEach(m => {
@@ -50,7 +50,10 @@ export default function UserMenu({ onSalir }: { onSalir: () => void }) {
     <div id="userMenu" className="modal"
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'none', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 100 }}>
       <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 380, width: '100%' }}>
-        <h2 style={{ fontSize: '1.15rem', marginBottom: 4, color: '#2A398D' }}>👤 {usuario}</h2>
+        <h2 style={{ fontSize: '1.15rem', marginBottom: 2, color: '#2A398D' }}>👤 {usuario}</h2>
+        {grupoNombre && (
+          <p style={{ fontSize: '.78rem', color: '#3CAC3B', fontWeight: 700, marginBottom: 4 }}>🏆 {grupoNombre}</p>
+        )}
         <p style={{ fontSize: '.85rem', color: '#474A4A', marginBottom: 14 }}>Tu resumen en la polla</p>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
@@ -94,6 +97,7 @@ export default function UserMenu({ onSalir }: { onSalir: () => void }) {
             })
         }
 
+        {btn('🏆 Mis grupos', () => { cerrar(); onMisGrupos(); })}
         {btn('🔄 Cambiar de usuario', () => {
           cerrar();
           const inp = document.getElementById('nameInput') as HTMLInputElement | null;
