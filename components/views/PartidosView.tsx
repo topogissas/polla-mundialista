@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { ALL_MATCHES, GRUPOS_LETRAS, inicioPartido, flag, partidoCerrado, fechaColPartido } from '@/lib/matches';
 import MatchCard from '@/components/MatchCard';
+import LiveStats from '@/components/LiveStats';
+import type { Resultados } from '@/lib/types';
 
 const FASES = [
   ['todos', 'Todos'], ['grupo', 'Grupos'], ['R32', 'Ronda 32'],
@@ -53,8 +55,39 @@ function ProximoPartido({ now }: { now: number }) {
   );
 }
 
+function LiveNow({ now, resultados }: { now: number; resultados: Resultados }) {
+  const vivos = ALL_MATCHES
+    .map(m => ({ m, ini: inicioPartido(m) }))
+    .filter((x): x is { m: typeof x.m; ini: Date } => x.ini !== null)
+    .filter(({ ini }) => now >= ini.getTime() && now < ini.getTime() + 120 * 60 * 1000);
+
+  if (!vivos.length) return null;
+
+  return (
+    <>
+      {vivos.map(({ m }) => {
+        const real = resultados[m.id] || { l: null, v: null };
+        const tieneR = real.l !== null && real.v !== null;
+        return (
+          <div key={m.id} style={{ background: '#fff5f5', border: '2px solid #e53935', borderRadius: 14, padding: '12px 14px', marginBottom: 10 }}>
+            <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#e53935', marginBottom: 6, letterSpacing: '.04em' }}>🔴 EN VIVO AHORA</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontWeight: 700, fontSize: '.9rem' }}>{flag(m.local)} {m.local}</span>
+              <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#16271c', minWidth: 60, textAlign: 'center' }}>
+                {tieneR ? `${real.l} — ${real.v}` : '? — ?'}
+              </span>
+              <span style={{ fontWeight: 700, fontSize: '.9rem', textAlign: 'right' }}>{m.visitante} {flag(m.visitante)}</span>
+            </div>
+            <LiveStats m={m} enVivo={true} />
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export default function PartidosView({ toast }: { toast: (m: string) => void }) {
-  const { usuario, esAdmin, filtroFase, dispatch } = useApp();
+  const { usuario, esAdmin, filtroFase, resultados, dispatch } = useApp();
   const [now, setNow] = useState<number>(() => Date.now());
 
   // Refresca cada minuto: mantiene el contador y los candados de "Cerrado" al día.
@@ -75,6 +108,7 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     return (
       <div>
         <ProximoPartido now={now} />
+        <LiveNow now={now} resultados={resultados} />
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '12px 0 4px', WebkitOverflowScrolling: 'touch' as any }}>
           {FASES.map(([f, label]) => (
             <button
@@ -121,6 +155,7 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     return (
       <div>
         <ProximoPartido now={now} />
+        <LiveNow now={now} resultados={resultados} />
         <div style={{ fontWeight: 800, color: '#1A6B2F', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #27AE60' }}>
           📅 Partidos de hoy
         </div>
