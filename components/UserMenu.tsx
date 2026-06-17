@@ -90,16 +90,28 @@ export default function UserMenu({ onSalir, onMisGrupos }: { onSalir: () => void
   }
 
   function compartirWhatsApp() {
-    const ranking = jugados > 0 ? `${total} pts · ${exactos} exactos` : 'aún sin resultados';
+    const sep = '━━━━━━━━━━━━━━';
 
-    // Partidos de hoy en Colombia
     const hoyCol = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
     const partidosHoy = ALL_MATCHES.filter(m => fechaColPartido(m) === hoyCol);
     const listaHoy = partidosHoy.length > 0
-      ? '\n\n⚽ *Partidos de hoy (hora COL)*\n' + partidosHoy.map(m => `${m.hora} (${formatHora(m.hora, '12h')}) — ${flag(m.local)} ${m.local} vs ${m.visitante} ${flag(m.visitante)}`).join('\n')
+      ? `\n${sep}\n⚽ *Partidos de hoy (hora Colombia)*\n` + partidosHoy.map(m => `🕐 ${m.hora} (${formatHora(m.hora, '12h')})  ${flag(m.local)} ${m.local} vs ${m.visitante} ${flag(m.visitante)}`).join('\n')
       : '';
 
-    const texto = `🏆 *Polla Mundial 2026*\n👤 *${usuario}*${grupoNombre ? ` · Grupo ${grupoNombre}` : ''}\n${ranking}${listaHoy}\n\n¡Únete y compite!`;
+    const resumen = jugados > 0
+      ? `📊 ${total} pts  •  ✅ ${exactos} exactos  •  ⚽ ${jugados} jugados`
+      : '📊 Aún sin resultados';
+
+    const texto = [
+      `🏆 *Polla Mundial 2026*`,
+      sep,
+      `👤 *${usuario}*`,
+      grupoNombre ? `🏆 Grupo ${grupoNombre}` : '',
+      resumen,
+      listaHoy,
+      `${sep}\n¡Únete y compite! 🎯`,
+    ].filter(Boolean).join('\n');
+
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
   }
 
