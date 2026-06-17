@@ -14,6 +14,7 @@ interface State {
   filtroFase: string;
   cambios: boolean;
   toastMsg: string | null;
+  formatoHora: '12h' | '24h';
 }
 
 type Action =
@@ -29,13 +30,14 @@ type Action =
   | { type: 'SET_GUARDADOS'; ids: string[] }
   | { type: 'ADD_GUARDADOS'; ids: string[] }
   | { type: 'TOAST'; msg: string | null }
+  | { type: 'SET_FORMATO_HORA'; val: '12h' | '24h' }
   | { type: 'LOGOUT' };
 
 const initial: State = {
   usuario: null, participanteId: null,
   predicciones: {}, especiales: { campeon: null, subcampeon: null, goleador: null },
   resultados: {}, guardados: [], esAdmin: false, vista: 'partidos', filtroFase: 'todos',
-  cambios: false, toastMsg: null,
+  cambios: false, toastMsg: null, formatoHora: '24h',
 };
 
 function reducer(s: State, a: Action): State {
@@ -58,6 +60,7 @@ function reducer(s: State, a: Action): State {
     case 'SET_GUARDADOS': return { ...s, guardados: a.ids };
     case 'ADD_GUARDADOS': return { ...s, guardados: Array.from(new Set([...s.guardados, ...a.ids])) };
     case 'TOAST': return { ...s, toastMsg: a.msg };
+    case 'SET_FORMATO_HORA': return { ...s, formatoHora: a.val };
     case 'LOGOUT': return {
       ...initial,
       resultados: s.resultados, // los resultados son globales, no se pierden

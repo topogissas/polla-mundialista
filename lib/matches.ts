@@ -74,6 +74,16 @@ export function partidoCerrado(m: Match): boolean {
   return Date.now() >= ini.getTime() - CIERRE_ANTES_MS;
 }
 
+export function formatHora(hora: string, formato: '12h' | '24h'): string {
+  if (formato === '24h') return hora;
+  const [hStr, mStr] = hora.split(':');
+  let h = parseInt(hStr);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  if (h > 12) h -= 12;
+  else if (h === 0) h = 12;
+  return `${h}:${mStr} ${ampm}`;
+}
+
 export const FASE_NOMBRE: Record<string, string> = {
   R32: 'Ronda de 32', R16: 'Octavos', CF: 'Cuartos', SF: 'Semifinal',
   '3P': 'Tercer puesto', FN: 'FINAL',

@@ -86,8 +86,8 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
     }
   }
 
-  if (!tabla) return <div style={{ textAlign: 'center', padding: 30, color: '#5a6b5e' }}>Calculando ranking…</div>;
-  if (!tabla.length) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#5a6b5e' }}>Aún no hay participantes. ¡Invita a tus amigos!</div>;
+  if (!tabla) return <div style={{ textAlign: 'center', padding: 30, color: '#474A4A' }}>Calculando ranking…</div>;
+  if (!tabla.length) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Aún no hay participantes. ¡Invita a tus amigos!</div>;
 
   return (
     <div style={{ paddingTop: 12 }}>
@@ -96,14 +96,14 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
         return (
           <div key={r.id} style={{ background: '#fff', borderRadius: 12, padding: '11px 14px', marginBottom: 8, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ fontWeight: 800, fontSize: '1.1rem', width: 30, textAlign: 'center', color: i === 0 ? '#D4A017' : '#5a6b5e' }}>{med}</div>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', width: 30, textAlign: 'center', color: i === 0 ? '#D4A017' : '#474A4A' }}>{med}</div>
               <div style={{ flex: 1, fontWeight: 600 }}>
                 {r.nombre}
-                <small style={{ display: 'block', fontWeight: 400, color: '#5a6b5e', fontSize: '.72rem' }}>{r.exactos} exactos · {r.jugados} jugados</small>
+                <small style={{ display: 'block', fontWeight: 400, color: '#474A4A', fontSize: '.72rem' }}>{r.exactos} exactos · {r.jugados} jugados</small>
               </div>
-              <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1A6B2F', textAlign: 'right' }}>
+              <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#2A398D', textAlign: 'right' }}>
                 {r.total}
-                <span style={{ fontSize: '.68rem', fontWeight: 600, color: '#5a6b5e', display: 'block' }}>puntos</span>
+                <span style={{ fontSize: '.68rem', fontWeight: 600, color: '#474A4A', display: 'block' }}>puntos</span>
               </div>
             </div>
             {esAdmin && (
@@ -127,7 +127,7 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200 }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%' }}>
             <h2 style={{ fontSize: '1.1rem', color: '#9a7400', marginBottom: 8 }}>¿Resetear apuestas?</h2>
-            <p style={{ fontSize: '.88rem', color: '#5a6b5e', marginBottom: 18 }}>
+            <p style={{ fontSize: '.88rem', color: '#474A4A', marginBottom: 18 }}>
               Se borrarán <b>todas las apuestas</b> de <b>{confirmReset.nombre}</b> (no se borra el usuario). Podrá volver a apostar los partidos que sigan abiertos.
             </p>
             <button
@@ -138,7 +138,7 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
             <button
               onClick={() => setConfirmReset(null)}
               disabled={busy}
-              style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#1A6B2F', border: '1px solid #27AE60', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}
+              style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#2A398D', border: '1px solid #3CAC3B', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}
             >Cancelar</button>
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200 }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%' }}>
             <h2 style={{ fontSize: '1.1rem', color: '#c0392b', marginBottom: 8 }}>¿Borrar usuario?</h2>
-            <p style={{ fontSize: '.88rem', color: '#5a6b5e', marginBottom: 18 }}>
+            <p style={{ fontSize: '.88rem', color: '#474A4A', marginBottom: 18 }}>
               Se eliminará a <b>{confirmDelete.nombre}</b> junto con todos sus pronósticos y especiales. Esta acción no se puede deshacer.
             </p>
             <button
@@ -160,7 +160,7 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
             <button
               onClick={() => setConfirmDelete(null)}
               disabled={busy}
-              style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#1A6B2F', border: '1px solid #27AE60', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}
+              style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#2A398D', border: '1px solid #3CAC3B', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}
             >Cancelar</button>
           </div>
         </div>

@@ -78,15 +78,15 @@ export default function LiveStats({ m, enVivo }: { m: Match; enVivo: boolean }) 
     <div style={{ marginTop: 8 }}>
       <button
         onClick={() => setOpen(v => !v)}
-        style={{ width: '100%', background: 'none', border: '1px solid #dfe8e1', borderRadius: 8, padding: '5px 0', fontSize: '.7rem', color: '#5a6b5e', fontWeight: 600, cursor: 'pointer' }}
+        style={{ width: '100%', background: 'none', border: '1px solid #D5D9EB', borderRadius: 8, padding: '5px 0', fontSize: '.7rem', color: '#474A4A', fontWeight: 600, cursor: 'pointer' }}
       >
         {open ? '▲' : '▼'} Estadísticas
       </button>
       {open && (
         <div style={{ padding: '8px 2px 4px' }}>
-          {loading && <p style={{ textAlign: 'center', fontSize: '.7rem', color: '#5a6b5e', margin: 4 }}>Cargando…</p>}
+          {loading && <p style={{ textAlign: 'center', fontSize: '.7rem', color: '#474A4A', margin: 4 }}>Cargando…</p>}
           {!loading && filtered.length === 0 && (
-            <p style={{ textAlign: 'center', fontSize: '.7rem', color: '#5a6b5e', margin: 4 }}>Sin estadísticas disponibles aún</p>
+            <p style={{ textAlign: 'center', fontSize: '.7rem', color: '#474A4A', margin: 4 }}>Sin estadísticas disponibles aún</p>
           )}
           {filtered.map(s => {
             const label = STAT_ES[s.strStat] || s.strStat;
@@ -97,12 +97,12 @@ export default function LiveStats({ m, enVivo }: { m: Match; enVivo: boolean }) 
             return (
               <div key={s.strStat} style={{ marginBottom: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.68rem', marginBottom: 3 }}>
-                  <b style={{ color: '#1A6B2F' }}>{hv}{isPct ? '%' : ''}</b>
-                  <span style={{ color: '#5a6b5e' }}>{label}</span>
+                  <b style={{ color: '#2A398D' }}>{hv}{isPct ? '%' : ''}</b>
+                  <span style={{ color: '#474A4A' }}>{label}</span>
                   <b style={{ color: '#e53935' }}>{av}{isPct ? '%' : ''}</b>
                 </div>
-                <div style={{ height: 5, background: '#dfe8e1', borderRadius: 3, overflow: 'hidden', display: 'flex' }}>
-                  <div style={{ width: `${hPct}%`, background: '#27AE60' }} />
+                <div style={{ height: 5, background: '#D5D9EB', borderRadius: 3, overflow: 'hidden', display: 'flex' }}>
+                  <div style={{ width: `${hPct}%`, background: '#3CAC3B' }} />
                   <div style={{ flex: 1, background: '#e53935' }} />
                 </div>
               </div>

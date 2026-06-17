@@ -8,8 +8,8 @@ body { -webkit-font-smoothing: antialiased; }
 .score-in {
   width: 42px; height: 40px; text-align: center;
   font-size: 1.1rem; font-weight: 700;
-  border: 2px solid #dfe8e1; border-radius: 9px;
-  background: #fff; color: #16271c;
+  border: 2px solid #D5D9EB; border-radius: 9px;
+  background: #fff; color: #1A1F3A;
 }
-.score-in:focus { outline: none; border-color: #27AE60; }
-.score-in:disabled { background: #f0f3f1; color: #5a6b5e; }
+.score-in:focus { outline: none; border-color: #3CAC3B; }
+.score-in:disabled { background: #f0f3f1; color: #474A4A; }

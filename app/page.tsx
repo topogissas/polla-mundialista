@@ -123,20 +123,6 @@ export default function Home() {
         {vista === 'apuestas' && <ApuestasView toast={toast} />}
         {vista === 'reglas' && <ReglasView />}
         {vista === 'avisos' && <AvisosView />}
-        <div
-          className="text-center mt-5 text-xs text-gris cursor-pointer underline"
-          onClick={() => {
-            if (esAdmin) {
-              dispatch({ type: 'SET_ADMIN', val: false });
-              toast('Modo admin desactivado');
-            } else {
-              dispatch({ type: 'SET_VISTA', val: 'partidos' }); // will be overridden by AdminModal
-              document.getElementById('adminModal')?.classList.add('show');
-            }
-          }}
-        >
-          {esAdmin ? '✅ Modo admin ACTIVO — toca para salir' : '🔧 Modo administrador (cargar resultados reales)'}
-        </div>
       </div>
       <SaveBar onGuardar={guardar} />
       <LoginModal onEntrar={entrar} />

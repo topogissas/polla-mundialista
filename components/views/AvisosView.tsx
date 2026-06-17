@@ -25,20 +25,20 @@ function Bloque({ titulo, arr, etiqueta }: { titulo: string; arr: { m: Match }[]
   const msg = armarMensaje(etiqueta, arr);
   if (!arr.length) return (
     <div style={{ background: '#fff', borderRadius: 14, padding: 16, marginBottom: 12, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
-      <h3 style={{ color: '#1A6B2F', fontSize: '.95rem', marginBottom: 8 }}>{titulo}</h3>
-      <p style={{ color: '#5a6b5e', fontSize: '.85rem' }}>No hay partidos en esta ventana.</p>
+      <h3 style={{ color: '#2A398D', fontSize: '.95rem', marginBottom: 8 }}>{titulo}</h3>
+      <p style={{ color: '#474A4A', fontSize: '.85rem' }}>No hay partidos en esta ventana.</p>
     </div>
   );
   return (
     <div style={{ background: '#fff', borderRadius: 14, padding: 16, marginBottom: 12, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
-      <h3 style={{ color: '#1A6B2F', fontSize: '.95rem', marginBottom: 8 }}>{titulo}</h3>
-      <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '.82rem', background: '#EDF7EE', padding: 10, borderRadius: 8, color: '#16271c', marginBottom: 10 }}>{msg}</pre>
+      <h3 style={{ color: '#2A398D', fontSize: '.95rem', marginBottom: 8 }}>{titulo}</h3>
+      <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '.82rem', background: '#EEF0F9', padding: 10, borderRadius: 8, color: '#1A1F3A', marginBottom: 10 }}>{msg}</pre>
       <button onClick={() => window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank')}
-        style={{ display: 'block', width: '100%', padding: 13, background: '#1A6B2F', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer', marginBottom: 8 }}>
+        style={{ display: 'block', width: '100%', padding: 13, background: '#2A398D', color: '#fff', border: 0, borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer', marginBottom: 8 }}>
         📲 Abrir WhatsApp con este mensaje
       </button>
       <button onClick={() => navigator.clipboard.writeText(msg).catch(() => {})}
-        style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#1A6B2F', border: '1px solid #27AE60', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}>
+        style={{ display: 'block', width: '100%', padding: 13, background: '#fff', color: '#2A398D', border: '1px solid #3CAC3B', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: 'pointer' }}>
         📋 Copiar mensaje
       </button>
     </div>
@@ -51,9 +51,9 @@ export default function AvisosView() {
   const manana = partidosEnVentana(12, 36);
   return (
     <div style={{ paddingTop: 12 }}>
-      <div style={{ background: '#EDF7EE', borderRadius: 14, padding: 16, marginBottom: 12 }}>
-        <h3 style={{ color: '#1A6B2F', fontSize: '.95rem', marginBottom: 8 }}>📣 Recordatorios por WhatsApp</h3>
-        <p style={{ fontSize: '.82rem', color: '#5a6b5e' }}>
+      <div style={{ background: '#EEF0F9', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+        <h3 style={{ color: '#2A398D', fontSize: '.95rem', marginBottom: 8 }}>📣 Recordatorios por WhatsApp</h3>
+        <p style={{ fontSize: '.82rem', color: '#474A4A' }}>
           Elige una franja, toca <b>Abrir WhatsApp</b>, selecciona tu grupo y envía.
           {!POLLA_URL && <><br /><br />⚠️ <b>Tip:</b> cuando subas la polla, pon el link en la variable <code>NEXT_PUBLIC_POLLA_URL</code> para que se incluya en los avisos.</>}
         </p>

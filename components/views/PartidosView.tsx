@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { ALL_MATCHES, GRUPOS_LETRAS, inicioPartido, flag, partidoCerrado, fechaColPartido } from '@/lib/matches';
+import { ALL_MATCHES, GRUPOS_LETRAS, inicioPartido, flag, partidoCerrado, fechaColPartido, formatHora } from '@/lib/matches';
 import MatchCard from '@/components/MatchCard';
 import LiveStats from '@/components/LiveStats';
 import type { Resultados } from '@/lib/types';
@@ -22,6 +22,7 @@ function restanteTexto(ms: number): string {
 }
 
 function ProximoPartido({ now }: { now: number }) {
+  const { formatoHora } = useApp();
   const proximos = ALL_MATCHES
     .map(m => ({ m, ini: inicioPartido(m) }))
     .filter((x): x is { m: typeof x.m; ini: Date } => x.ini !== null && x.ini.getTime() > now)
@@ -29,7 +30,7 @@ function ProximoPartido({ now }: { now: number }) {
 
   if (!proximos.length) {
     return (
-      <div style={{ background: '#EDF7EE', borderRadius: 12, padding: '10px 14px', margin: '12px 0 4px', fontSize: '.82rem', color: '#5a6b5e', textAlign: 'center' }}>
+      <div style={{ background: '#EEF0F9', borderRadius: 12, padding: '10px 14px', margin: '12px 0 4px', fontSize: '.82rem', color: '#474A4A', textAlign: 'center' }}>
         No quedan partidos por jugar. ¡Revisa el ranking final! 🏆
       </div>
     );
@@ -40,15 +41,15 @@ function ProximoPartido({ now }: { now: number }) {
   const restante = restanteTexto(sig.ini.getTime() - now);
 
   return (
-    <div style={{ background: '#EDF7EE', border: '1px solid #cfe6d4', borderRadius: 12, padding: '10px 14px', margin: '12px 0 4px' }}>
-      <div style={{ fontSize: '.72rem', color: '#5a6b5e', fontWeight: 700, marginBottom: 2 }}>
+    <div style={{ background: '#EEF0F9', border: '1px solid #C8CCDE', borderRadius: 12, padding: '10px 14px', margin: '12px 0 4px' }}>
+      <div style={{ fontSize: '.72rem', color: '#474A4A', fontWeight: 700, marginBottom: 2 }}>
         ⏳ PRÓXIMO PARTIDO · cierra en {restante}
       </div>
-      <div style={{ fontSize: '.92rem', fontWeight: 700, color: '#16271c' }}>
-        {flag(sig.m.local)} {sig.m.local} <span style={{ color: '#5a6b5e' }}>vs</span> {sig.m.visitante} {flag(sig.m.visitante)}
+      <div style={{ fontSize: '.92rem', fontWeight: 700, color: '#1A1F3A' }}>
+        {flag(sig.m.local)} {sig.m.local} <span style={{ color: '#474A4A' }}>vs</span> {sig.m.visitante} {flag(sig.m.visitante)}
       </div>
-      <div style={{ fontSize: '.72rem', color: '#5a6b5e', marginTop: 2 }}>
-        {sig.m.dia} · {sig.m.hora} 🇨🇴
+      <div style={{ fontSize: '.72rem', color: '#474A4A', marginTop: 2 }}>
+        {sig.m.dia} · {formatHora(sig.m.hora, formatoHora)} 🇨🇴
         {cierran24 > 1 && <> · <b>{cierran24}</b> partidos cierran en 24 h</>}
       </div>
     </div>
@@ -73,7 +74,7 @@ function LiveNow({ now, resultados }: { now: number; resultados: Resultados }) {
             <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#e53935', marginBottom: 6, letterSpacing: '.04em' }}>🔴 EN VIVO AHORA</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               <span style={{ fontWeight: 700, fontSize: '.9rem' }}>{flag(m.local)} {m.local}</span>
-              <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#16271c', minWidth: 60, textAlign: 'center' }}>
+              <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#1A1F3A', minWidth: 60, textAlign: 'center' }}>
                 {tieneR ? `${real.l} — ${real.v}` : '? — ?'}
               </span>
               <span style={{ fontWeight: 700, fontSize: '.9rem', textAlign: 'right' }}>{m.visitante} {flag(m.visitante)}</span>
@@ -87,7 +88,7 @@ function LiveNow({ now, resultados }: { now: number; resultados: Resultados }) {
 }
 
 export default function PartidosView({ toast }: { toast: (m: string) => void }) {
-  const { usuario, esAdmin, filtroFase, resultados, dispatch } = useApp();
+  const { usuario, esAdmin, filtroFase, resultados, formatoHora, dispatch } = useApp();
   const [now, setNow] = useState<number>(() => Date.now());
 
   // Refresca cada minuto: mantiene el contador y los candados de "Cerrado" al día.
@@ -97,7 +98,7 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
   }, []);
 
   if (!usuario) {
-    return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#5a6b5e', fontSize: '.9rem' }}>👋 Toca <b>&quot;Entrar&quot;</b> arriba a la derecha para empezar.</div>;
+    return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A', fontSize: '.9rem' }}>👋 Toca <b>&quot;Entrar&quot;</b> arriba a la derecha para empezar.</div>;
   }
 
   // ── Vista admin: ve TODOS los partidos (los necesita para cargar resultados) ──
@@ -116,10 +117,10 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
               onClick={() => dispatch({ type: 'SET_FILTRO', val: f })}
               style={{
                 whiteSpace: 'nowrap', padding: '6px 13px',
-                border: `1px solid ${filtroFase === f ? '#27AE60' : '#dfe8e1'}`,
-                background: filtroFase === f ? '#EDF7EE' : '#fff',
+                border: `1px solid ${filtroFase === f ? '#3CAC3B' : '#D5D9EB'}`,
+                background: filtroFase === f ? '#EEF0F9' : '#fff',
                 borderRadius: 18, fontSize: '.78rem', cursor: 'pointer',
-                color: filtroFase === f ? '#1A6B2F' : '#5a6b5e', fontWeight: 600,
+                color: filtroFase === f ? '#2A398D' : '#474A4A', fontWeight: 600,
               }}
             >{label}</button>
           ))}
@@ -127,7 +128,7 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
         {filtroFase === 'grupo' ? (
           GRUPOS_LETRAS.map(g => (
             <div key={g}>
-              <div style={{ fontWeight: 800, color: '#1A6B2F', margin: '16px 0 8px', fontSize: '1rem', paddingLeft: 4, borderLeft: '4px solid #27AE60' }}>Grupo {g}</div>
+              <div style={{ fontWeight: 800, color: '#2A398D', margin: '16px 0 8px', fontSize: '1rem', paddingLeft: 4, borderLeft: '4px solid #3CAC3B' }}>Grupo {g}</div>
               {lista.filter(m => m.grupo === g).map(m => <MatchCard key={m.id} m={m} />)}
             </div>
           ))
@@ -156,11 +157,11 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
       <div>
         <ProximoPartido now={now} />
         <LiveNow now={now} resultados={resultados} />
-        <div style={{ fontWeight: 800, color: '#1A6B2F', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #27AE60' }}>
+        <div style={{ fontWeight: 800, color: '#2A398D', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #3CAC3B' }}>
           📅 Partidos de hoy
         </div>
         {delHoy.map(m => <MatchCard key={m.id} m={m} />)}
-        <div style={{ textAlign: 'center', fontSize: '.76rem', color: '#5a6b5e', marginTop: 14 }}>
+        <div style={{ textAlign: 'center', fontSize: '.76rem', color: '#474A4A', marginTop: 14 }}>
           Lo que apostaron todos está en <b>Historial</b> 📜
         </div>
       </div>
@@ -173,7 +174,7 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     return (
       <div>
         <ProximoPartido now={now} />
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#5a6b5e', fontSize: '.9rem' }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A', fontSize: '.9rem' }}>
           No hay partidos abiertos para apostar ahora. Mira lo que apostaron todos en <b>Historial</b> 📜
         </div>
       </div>
@@ -187,11 +188,11 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
   return (
     <div>
       <ProximoPartido now={now} />
-      <div style={{ fontWeight: 800, color: '#1A6B2F', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #27AE60' }}>
+      <div style={{ fontWeight: 800, color: '#2A398D', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #3CAC3B' }}>
         {titulo}
       </div>
       {delDia.map(m => <MatchCard key={m.id} m={m} />)}
-      <div style={{ textAlign: 'center', fontSize: '.76rem', color: '#5a6b5e', marginTop: 14 }}>
+      <div style={{ textAlign: 'center', fontSize: '.76rem', color: '#474A4A', marginTop: 14 }}>
         Lo que apostaron todos está en <b>Historial</b> 📜
       </div>
     </div>
