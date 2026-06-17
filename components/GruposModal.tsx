@@ -137,6 +137,11 @@ export default function GruposModal({ onCerrar, onCambiarGrupo }: {
         grupo_id: pinGrupo.id, participante_id: participanteId, estado: 'pendiente',
       });
       if (error) { alert('Error: ' + error.message); return; }
+
+      // Notificar al admin por WhatsApp
+      const msg = `🏆 *Polla Mundial 2026*\n\n📩 *${usuario || 'Un usuario'}* quiere unirse al grupo *${pinGrupo.nombre}*.\n\nEntra a la app → Mis grupos → Admin para aprobar o rechazar.`;
+      window.open(`https://wa.me/573125511088?text=${encodeURIComponent(msg)}`, '_blank');
+
       setPinGrupo(null);
       await cargar();
     } finally { setBusy(false); }
