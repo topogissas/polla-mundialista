@@ -14,8 +14,8 @@ export default function Logo({ size = 40 }: { size?: number }) {
     >
       <defs>
         <linearGradient id="pollaField" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#27AE60" />
-          <stop offset="1" stopColor="#1A6B2F" />
+          <stop offset="0" stopColor="#3CAC3B" />
+          <stop offset="1" stopColor="#2A398D" />
         </linearGradient>
       </defs>
 
@@ -36,10 +36,10 @@ export default function Logo({ size = 40 }: { size?: number }) {
         {/* Pentágono central */}
         <polygon
           points="32,30 36.76,33.45 34.94,39.05 29.06,39.05 27.24,33.45"
-          fill="#16271c"
+          fill="#1A1F3A"
         />
         {/* Costuras hacia el borde */}
-        <g stroke="#16271c" strokeWidth="1.4" strokeLinecap="round">
+        <g stroke="#1A1F3A" strokeWidth="1.4" strokeLinecap="round">
           <line x1="32" y1="30" x2="32" y2="22" />
           <line x1="36.76" y1="33.45" x2="44.36" y2="30.98" />
           <line x1="34.94" y1="39.05" x2="39.64" y2="45.52" />

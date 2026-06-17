@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { sb } from '@/lib/supabase';
 import { useApp } from '@/context/AppContext';
-import { ALL_MATCHES, flag, FASE_NOMBRE, inicioPartido } from '@/lib/matches';
+import { ALL_MATCHES, flag, FASE_NOMBRE, inicioPartido, formatHora } from '@/lib/matches';
 import { calcularPuntos } from '@/lib/scoring';
 import type { Resultados, Score } from '@/lib/types';
 
@@ -14,7 +14,7 @@ const FASES: [string, string][] = [
 ];
 
 export default function ApuestasView({ toast }: { toast: (m: string) => void }) {
-  const { esAdmin } = useApp();
+  const { esAdmin, formatoHora } = useApp();
   const [resultados, setResultados] = useState<Resultados>({});
   const [porMatch, setPorMatch] = useState<Record<string, Apuesta[]>>({});
   const [loading, setLoading] = useState(true);
@@ -56,8 +56,8 @@ export default function ApuestasView({ toast }: { toast: (m: string) => void }) 
     } finally { setBusy(false); }
   }
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 30, color: '#5a6b5e' }}>Cargando apuestas…</div>;
-  if (!Object.keys(porMatch).length) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#5a6b5e' }}>Aún nadie ha guardado apuestas. Apenas alguien guarde y bloquee, aparecerá aquí.</div>;
+  if (loading) return <div style={{ textAlign: 'center', padding: 30, color: '#474A4A' }}>Cargando apuestas…</div>;
+  if (!Object.keys(porMatch).length) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Aún nadie ha guardado apuestas. Apenas alguien guarde y bloquee, aparecerá aquí.</div>;
 
   let matches = ALL_MATCHES.filter(m => (porMatch[m.id]?.length || 0) > 0);
   if (filtro === 'grupo') matches = matches.filter(m => m.fase === 'grupo');
@@ -65,7 +65,7 @@ export default function ApuestasView({ toast }: { toast: (m: string) => void }) 
 
   return (
     <div style={{ paddingTop: 8 }}>
-      <p style={{ fontSize: '.76rem', color: '#5a6b5e', margin: '4px 2px 8px' }}>
+      <p style={{ fontSize: '.76rem', color: '#474A4A', margin: '4px 2px 8px' }}>
         Solo aparecen las apuestas que cada quien ya <b>guardó y bloqueó</b>.
       </p>
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '4px 0 10px', WebkitOverflowScrolling: 'touch' as any }}>
@@ -75,17 +75,17 @@ export default function ApuestasView({ toast }: { toast: (m: string) => void }) 
             onClick={() => setFiltro(f)}
             style={{
               whiteSpace: 'nowrap', padding: '6px 13px',
-              border: `1px solid ${filtro === f ? '#27AE60' : '#dfe8e1'}`,
-              background: filtro === f ? '#EDF7EE' : '#fff',
+              border: `1px solid ${filtro === f ? '#3CAC3B' : '#D5D9EB'}`,
+              background: filtro === f ? '#EEF0F9' : '#fff',
               borderRadius: 18, fontSize: '.78rem', cursor: 'pointer',
-              color: filtro === f ? '#1A6B2F' : '#5a6b5e', fontWeight: 600,
+              color: filtro === f ? '#2A398D' : '#474A4A', fontWeight: 600,
             }}
           >{label}</button>
         ))}
       </div>
 
       {matches.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '30px 20px', color: '#5a6b5e', fontSize: '.88rem' }}>No hay apuestas en esta fase todavía.</div>
+        <div style={{ textAlign: 'center', padding: '30px 20px', color: '#474A4A', fontSize: '.88rem' }}>No hay apuestas en esta fase todavía.</div>
       ) : matches.map(m => {
         const real = resultados[m.id];
         const tieneR = real?.l !== null && real?.l !== undefined;
@@ -95,23 +95,23 @@ export default function ApuestasView({ toast }: { toast: (m: string) => void }) 
         const faseLabel = m.fase === 'grupo' ? ('Grupo ' + m.grupo) : FASE_NOMBRE[m.fase];
         return (
           <div key={m.id} style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', marginBottom: 10, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '.68rem', color: '#5a6b5e', marginBottom: 6, fontWeight: 600 }}>
-              <span style={{ background: m.fase !== 'grupo' ? '#fdf3dd' : '#EDF7EE', color: m.fase !== 'grupo' ? '#9a7400' : '#1A6B2F', padding: '2px 8px', borderRadius: 6 }}>{faseLabel}</span>
-              <span>{m.dia} · {m.hora} 🇨🇴</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '.68rem', color: '#474A4A', marginBottom: 6, fontWeight: 600 }}>
+              <span style={{ background: m.fase !== 'grupo' ? '#fdf3dd' : '#EEF0F9', color: m.fase !== 'grupo' ? '#9a7400' : '#2A398D', padding: '2px 8px', borderRadius: 6 }}>{faseLabel}</span>
+              <span>{m.dia} · {formatHora(m.hora, formatoHora)} 🇨🇴</span>
             </div>
             <div style={{ textAlign: 'center', fontSize: '.92rem', fontWeight: 700, marginBottom: 8 }}>
-              {flag(m.local)} {m.local} <span style={{ color: '#5a6b5e' }}>vs</span> {m.visitante} {flag(m.visitante)}
-              {tieneR && <span style={{ display: 'inline-block', marginLeft: 8, background: '#1A6B2F', color: '#fff', borderRadius: 6, padding: '1px 8px', fontSize: '.8rem' }}>Real {real.l}-{real.v}</span>}
+              {flag(m.local)} {m.local} <span style={{ color: '#474A4A' }}>vs</span> {m.visitante} {flag(m.visitante)}
+              {tieneR && <span style={{ display: 'inline-block', marginLeft: 8, background: '#2A398D', color: '#fff', borderRadius: 6, padding: '1px 8px', fontSize: '.8rem' }}>Real {real.l}-{real.v}</span>}
             </div>
             {porMatch[m.id].map(a => {
               const pts = tieneR ? calcularPuntos(a.score, real, m.fase) : null;
-              const color = pts === null ? '#5a6b5e' : pts === 0 ? '#c0392b' : pts === 25 ? '#1A6B2F' : '#27AE60';
+              const color = pts === null ? '#474A4A' : pts === 0 ? '#c0392b' : pts === 25 ? '#2A398D' : '#3CAC3B';
               const etiqueta = enVivo ? '🔴' : pts === 0 ? 'Falló' : '+' + pts;
               const etqColor = enVivo ? '#e53935' : color;
               return (
                 <div key={a.pid} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid #f0f4f1' }}>
                   <span style={{ flex: 1, fontSize: '.85rem', fontWeight: 600 }}>{a.nombre}</span>
-                  <span style={{ background: '#EDF7EE', color: '#1A6B2F', borderRadius: 6, padding: '2px 10px', fontWeight: 800, fontSize: '.85rem' }}>{a.score.l}-{a.score.v}</span>
+                  <span style={{ background: '#EEF0F9', color: '#2A398D', borderRadius: 6, padding: '2px 10px', fontWeight: 800, fontSize: '.85rem' }}>{a.score.l}-{a.score.v}</span>
                   {tieneR && <span style={{ fontSize: '.72rem', fontWeight: 700, color: etqColor, width: 46, textAlign: 'right' }}>{etiqueta}</span>}
                   {esAdmin && (
                     <button
