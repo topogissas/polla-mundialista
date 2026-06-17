@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useReducer, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import type { Predicciones, Resultados, Especiales, Vista, Grupo } from '@/lib/types';
 
 interface State {
@@ -83,5 +83,12 @@ export function useApp() { const c = useContext(AppCtx); if (!c) throw new Error
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initial);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  }, []);
+
   return <AppCtx.Provider value={{ ...state, dispatch }}>{children}</AppCtx.Provider>;
 }

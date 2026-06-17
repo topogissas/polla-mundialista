@@ -12,20 +12,34 @@ const FASES = [
 ];
 
 function restanteTexto(ms: number): string {
-  const totalMin = Math.floor(ms / 60000);
-  const d = Math.floor(totalMin / 1440);
-  const h = Math.floor((totalMin % 1440) / 60);
-  const min = totalMin % 60;
+  const totalSeg = Math.floor(ms / 1000);
+  const d = Math.floor(totalSeg / 86400);
+  const h = Math.floor((totalSeg % 86400) / 3600);
+  const min = Math.floor((totalSeg % 3600) / 60);
+  const seg = totalSeg % 60;
   if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${min}m`;
+  if (min < 10) return `${min}:${String(seg).padStart(2, '0')}`;
   return `${min}m`;
 }
 
 function ProximoPartido({ now }: { now: number }) {
   const { formatoHora } = useApp();
+  const [tick, setTick] = useState(now);
+  useEffect(() => {
+    const proximos = ALL_MATCHES
+      .map(m => inicioPartido(m))
+      .filter((d): d is Date => d !== null && d.getTime() > now)
+      .sort((a, b) => a.getTime() - b.getTime());
+    if (proximos.length && proximos[0].getTime() - now < 10 * 60 * 1000) {
+      const id = setInterval(() => setTick(Date.now()), 1000);
+      return () => clearInterval(id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [now]);
   const proximos = ALL_MATCHES
     .map(m => ({ m, ini: inicioPartido(m) }))
-    .filter((x): x is { m: typeof x.m; ini: Date } => x.ini !== null && x.ini.getTime() > now)
+    .filter((x): x is { m: typeof x.m; ini: Date } => x.ini !== null && x.ini.getTime() > tick)
     .sort((a, b) => a.ini.getTime() - b.ini.getTime());
 
   if (!proximos.length) {
@@ -37,8 +51,8 @@ function ProximoPartido({ now }: { now: number }) {
   }
 
   const sig = proximos[0];
-  const cierran24 = proximos.filter(x => x.ini.getTime() - now <= 24 * 3600000).length;
-  const restante = restanteTexto(sig.ini.getTime() - now);
+  const cierran24 = proximos.filter(x => x.ini.getTime() - tick <= 24 * 3600000).length;
+  const restante = restanteTexto(sig.ini.getTime() - tick);
 
   return (
     <div style={{ background: '#EEF0F9', border: '1px solid #C8CCDE', borderRadius: 12, padding: '10px 14px', margin: '12px 0 4px' }}>

@@ -1,7 +1,9 @@
 'use client';
+import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { ALL_MATCHES, GRUPOS_LETRAS } from '@/lib/matches';
 import MatchCard from '@/components/MatchCard';
+import TablaGrupos from '@/components/TablaGrupos';
 
 const FASES: [string, string][] = [
   ['todos', 'Todos'], ['grupo', 'Grupos'], ['R32', 'Ronda 32'],
@@ -10,6 +12,7 @@ const FASES: [string, string][] = [
 
 export default function CalendarioView() {
   const { usuario, filtroFase, dispatch } = useApp();
+  const [verTabla, setVerTabla] = useState(false);
 
   if (!usuario) {
     return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A', fontSize: '.9rem' }}>👋 Toca <b>&quot;Entrar&quot;</b> arriba a la derecha para empezar.</div>;
@@ -24,6 +27,22 @@ export default function CalendarioView() {
       <p style={{ fontSize: '.76rem', color: '#474A4A', margin: '10px 2px 4px' }}>
         Todos los partidos del torneo. Puedes apostar los que sigan abiertos (cierran 5 min antes).
       </p>
+
+      {/* Tabla de grupos toggle */}
+      <button
+        onClick={() => setVerTabla(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+          padding: '10px 14px', marginBottom: 10, borderRadius: 12,
+          background: verTabla ? '#2A398D' : '#EEF0F9',
+          color: verTabla ? '#fff' : '#2A398D',
+          border: 'none', fontWeight: 700, fontSize: '.88rem', cursor: 'pointer',
+        }}
+      >
+        📊 Tabla de posiciones por grupo {verTabla ? '▲' : '▼'}
+      </button>
+      {verTabla && <TablaGrupos />}
+
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '6px 0 4px', WebkitOverflowScrolling: 'touch' as any }}>
         {FASES.map(([f, label]) => (
           <button
