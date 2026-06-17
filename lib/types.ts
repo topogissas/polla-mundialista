@@ -40,4 +40,5 @@ export interface Grupo {
   nombre: string;
   codigo: string;
   descripcion: string | null;
+  pin?: string;
 }

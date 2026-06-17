@@ -40,8 +40,13 @@ export default function GruposModal({ onCerrar, onCambiarGrupo }: {
   const [solicitudesAdmin, setSolicitudesAdmin] = useState<Solicitud[]>([]);
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoCodigo, setNuevoCodigo] = useState('');
+  const [nuevoPin, setNuevoPin] = useState('');
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<'mis' | 'unirse' | 'admin'>('mis');
+  // PIN flow: grupo al que se quiere solicitar unirse
+  const [pinGrupo, setPinGrupo] = useState<Grupo | null>(null);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
 
   const cargar = useCallback(async () => {
     if (!participanteId) return;
@@ -89,14 +94,25 @@ export default function GruposModal({ onCerrar, onCambiarGrupo }: {
   const miGrupoIds = new Set(misMembresías.map(m => m.grupo_id));
   const gruposDisponibles = todosGrupos.filter(g => !miGrupoIds.has(g.id));
 
-  async function solicitar(grupoId: string) {
-    if (!participanteId) return;
+  function abrirPinModal(g: Grupo) {
+    setPinGrupo(g);
+    setPinInput('');
+    setPinError('');
+  }
+
+  async function confirmarPin() {
+    if (!pinGrupo || !participanteId) return;
+    if (pinInput !== (pinGrupo.pin || '')) {
+      setPinError('PIN incorrecto. Pídelo al administrador del grupo.');
+      return;
+    }
     setBusy(true);
     try {
       const { error } = await sb.from('grupo_miembros').insert({
-        grupo_id: grupoId, participante_id: participanteId, estado: 'pendiente',
+        grupo_id: pinGrupo.id, participante_id: participanteId, estado: 'pendiente',
       });
       if (error) { alert('Error: ' + error.message); return; }
+      setPinGrupo(null);
       await cargar();
     } finally { setBusy(false); }
   }
@@ -119,12 +135,13 @@ export default function GruposModal({ onCerrar, onCambiarGrupo }: {
 
   async function crearGrupo() {
     if (!nuevoNombre.trim() || !nuevoCodigo.trim()) { alert('Completa nombre y código'); return; }
+    if (!/^\d{3}$/.test(nuevoPin)) { alert('El PIN debe ser exactamente 3 dígitos (ej: 456)'); return; }
     setBusy(true);
     try {
       const codigo = nuevoCodigo.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      const { error } = await sb.from('grupos').insert({ nombre: nuevoNombre.trim(), codigo });
+      const { error } = await sb.from('grupos').insert({ nombre: nuevoNombre.trim(), codigo, pin: nuevoPin });
       if (error) { alert('Error: ' + error.message); return; }
-      setNuevoNombre(''); setNuevoCodigo('');
+      setNuevoNombre(''); setNuevoCodigo(''); setNuevoPin('');
       await cargar();
     } finally { setBusy(false); }
   }
@@ -153,124 +170,177 @@ export default function GruposModal({ onCerrar, onCambiarGrupo }: {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 150 }}>
-      <div style={{ background: '#fff', borderRadius: 16, padding: 20, maxWidth: 420, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <h2 style={{ fontSize: '1.05rem', color: '#2A398D', margin: 0 }}>🏆 Grupos</h2>
-          <button onClick={onCerrar} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#474A4A' }}>✕</button>
-        </div>
-
-        {grupoNombre && (
-          <div style={{ background: '#EEF0F9', borderRadius: 10, padding: '8px 12px', marginBottom: 12, fontSize: '.82rem', color: '#2A398D', fontWeight: 600 }}>
-            Jugando en: <b>{grupoNombre}</b>
+    <>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 150 }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: 20, maxWidth: 420, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <h2 style={{ fontSize: '1.05rem', color: '#2A398D', margin: 0 }}>🏆 Grupos</h2>
+            <button onClick={onCerrar} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#474A4A' }}>✕</button>
           </div>
-        )}
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-          {tabBtn('mis', 'Mis grupos')}
-          {tabBtn('unirse', 'Unirse')}
-          {esAdmin && tabBtn('admin', `Admin${solicitudesAdmin.length ? ` (${solicitudesAdmin.length})` : ''}`)}
-        </div>
+          {grupoNombre && (
+            <div style={{ background: '#EEF0F9', borderRadius: 10, padding: '8px 12px', marginBottom: 12, fontSize: '.82rem', color: '#2A398D', fontWeight: 600 }}>
+              Jugando en: <b>{grupoNombre}</b>
+            </div>
+          )}
 
-        {/* Tab: Mis grupos */}
-        {tab === 'mis' && (
-          <div>
-            {misMembresías.length === 0 ? (
-              <p style={{ color: '#474A4A', fontSize: '.85rem', textAlign: 'center', padding: 20 }}>No estás en ningún grupo todavía. Usa la pestaña "Unirse".</p>
-            ) : misMembresías.map(m => (
-              <div key={m.id} style={{ background: '#F4F6FB', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '.9rem', color: '#2A398D' }}>{m.grupo_nombre}</div>
-                    <div style={{ fontSize: '.72rem', color: '#474A4A' }}>Código: {m.grupo_codigo}</div>
-                  </div>
-                  {estadoBadge(m.estado)}
-                </div>
-                {m.estado === 'activo' && m.grupo_id !== grupoId && (
-                  <button
-                    onClick={() => onCambiarGrupo({ id: m.grupo_id, nombre: m.grupo_nombre, codigo: m.grupo_codigo, descripcion: m.grupo_descripcion })}
-                    style={{ marginTop: 8, padding: '5px 12px', background: '#2A398D', color: '#fff', border: 'none', borderRadius: 8, fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}
-                  >Cambiar a este grupo</button>
-                )}
-              </div>
-            ))}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+            {tabBtn('mis', 'Mis grupos')}
+            {tabBtn('unirse', 'Unirse')}
+            {esAdmin && tabBtn('admin', `Admin${solicitudesAdmin.length ? ` (${solicitudesAdmin.length})` : ''}`)}
           </div>
-        )}
 
-        {/* Tab: Unirse */}
-        {tab === 'unirse' && (
-          <div>
-            {gruposDisponibles.length === 0 ? (
-              <p style={{ color: '#474A4A', fontSize: '.85rem', textAlign: 'center', padding: 20 }}>Ya estás en todos los grupos disponibles.</p>
-            ) : gruposDisponibles.map(g => {
-              const mia = misMembresías.find(m => m.grupo_id === g.id);
-              return (
-                <div key={g.id} style={{ background: '#F4F6FB', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
+          {tab === 'mis' && (
+            <div>
+              {misMembresías.length === 0 ? (
+                <p style={{ color: '#474A4A', fontSize: '.85rem', textAlign: 'center', padding: 20 }}>No estás en ningún grupo todavía. Usa la pestaña "Unirse".</p>
+              ) : misMembresías.map(m => (
+                <div key={m.id} style={{ background: '#F4F6FB', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '.9rem', color: '#2A398D' }}>{g.nombre}</div>
-                      <div style={{ fontSize: '.72rem', color: '#474A4A' }}>{g.descripcion || `Código: ${g.codigo}`}</div>
+                      <div style={{ fontWeight: 700, fontSize: '.9rem', color: '#2A398D' }}>{m.grupo_nombre}</div>
+                      <div style={{ fontSize: '.72rem', color: '#474A4A' }}>Código: {m.grupo_codigo}</div>
                     </div>
-                    {mia ? estadoBadge(mia.estado) : (
-                      <button
-                        onClick={() => solicitar(g.id)}
-                        disabled={busy}
-                        style={{ padding: '6px 14px', background: '#3CAC3B', color: '#fff', border: 'none', borderRadius: 8, fontSize: '.8rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}
-                      >Solicitar</button>
-                    )}
+                    {estadoBadge(m.estado)}
+                  </div>
+                  {m.estado === 'activo' && m.grupo_id !== grupoId && (
+                    <button
+                      onClick={() => onCambiarGrupo({ id: m.grupo_id, nombre: m.grupo_nombre, codigo: m.grupo_codigo, descripcion: m.grupo_descripcion })}
+                      style={{ marginTop: 8, padding: '5px 12px', background: '#2A398D', color: '#fff', border: 'none', borderRadius: 8, fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' }}
+                    >Cambiar a este grupo</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === 'unirse' && (
+            <div>
+              {gruposDisponibles.length === 0 ? (
+                <p style={{ color: '#474A4A', fontSize: '.85rem', textAlign: 'center', padding: 20 }}>Ya estás en todos los grupos disponibles.</p>
+              ) : gruposDisponibles.map(g => {
+                const mia = misMembresías.find(m => m.grupo_id === g.id);
+                return (
+                  <div key={g.id} style={{ background: '#F4F6FB', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '.9rem', color: '#2A398D' }}>{g.nombre}</div>
+                        <div style={{ fontSize: '.72rem', color: '#474A4A' }}>{g.descripcion || `Código: ${g.codigo}`}</div>
+                      </div>
+                      {mia ? estadoBadge(mia.estado) : (
+                        <button
+                          onClick={() => abrirPinModal(g)}
+                          disabled={busy}
+                          style={{ padding: '6px 14px', background: '#3CAC3B', color: '#fff', border: 'none', borderRadius: 8, fontSize: '.8rem', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}
+                        >Solicitar</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {tab === 'admin' && esAdmin && (
+            <div>
+              <h3 style={{ fontSize: '.88rem', color: '#474A4A', marginBottom: 10 }}>Solicitudes pendientes</h3>
+              {solicitudesAdmin.length === 0 ? (
+                <p style={{ color: '#474A4A', fontSize: '.85rem', textAlign: 'center', padding: '12px 0' }}>No hay solicitudes pendientes.</p>
+              ) : solicitudesAdmin.map(s => (
+                <div key={s.id} style={{ background: '#fffbe8', border: '1px solid #f0d68a', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
+                  <div style={{ fontSize: '.88rem', fontWeight: 700, color: '#2A398D' }}>{s.participante_nombre}</div>
+                  <div style={{ fontSize: '.75rem', color: '#474A4A', marginBottom: 8 }}>→ {s.grupo_nombre} · {new Date(s.solicitado_en).toLocaleDateString('es-CO')}</div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => aprobar(s.id)} disabled={busy} style={{ flex: 1, padding: '7px 0', background: '#3CAC3B', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '.8rem', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}>✅ Aprobar</button>
+                    <button onClick={() => rechazar(s.id)} disabled={busy} style={{ flex: 1, padding: '7px 0', background: '#fff0f0', color: '#c0392b', border: '1px solid #f5a5a5', borderRadius: 8, fontWeight: 700, fontSize: '.8rem', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}>❌ Rechazar</button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              ))}
 
-        {/* Tab: Admin */}
-        {tab === 'admin' && esAdmin && (
-          <div>
-            <h3 style={{ fontSize: '.88rem', color: '#474A4A', marginBottom: 10 }}>Solicitudes pendientes</h3>
-            {solicitudesAdmin.length === 0 ? (
-              <p style={{ color: '#474A4A', fontSize: '.85rem', textAlign: 'center', padding: '12px 0' }}>No hay solicitudes pendientes.</p>
-            ) : solicitudesAdmin.map(s => (
-              <div key={s.id} style={{ background: '#fffbe8', border: '1px solid #f0d68a', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
-                <div style={{ fontSize: '.88rem', fontWeight: 700, color: '#2A398D' }}>{s.participante_nombre}</div>
-                <div style={{ fontSize: '.75rem', color: '#474A4A', marginBottom: 8 }}>→ {s.grupo_nombre} · {new Date(s.solicitado_en).toLocaleDateString('es-CO')}</div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => aprobar(s.id)} disabled={busy} style={{ flex: 1, padding: '7px 0', background: '#3CAC3B', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '.8rem', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}>✅ Aprobar</button>
-                  <button onClick={() => rechazar(s.id)} disabled={busy} style={{ flex: 1, padding: '7px 0', background: '#fff0f0', color: '#c0392b', border: '1px solid #f5a5a5', borderRadius: 8, fontWeight: 700, fontSize: '.8rem', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}>❌ Rechazar</button>
-                </div>
+              <div style={{ borderTop: '1px solid #e8e8e8', marginTop: 16, paddingTop: 14 }}>
+                <h3 style={{ fontSize: '.88rem', color: '#474A4A', marginBottom: 10 }}>Crear nuevo grupo</h3>
+                <input
+                  value={nuevoNombre}
+                  onChange={e => setNuevoNombre(e.target.value)}
+                  placeholder="Nombre del grupo"
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #D5D9EB', borderRadius: 9, fontSize: '.88rem', marginBottom: 8, boxSizing: 'border-box' }}
+                />
+                <input
+                  value={nuevoCodigo}
+                  onChange={e => setNuevoCodigo(e.target.value.toUpperCase())}
+                  placeholder="Código (ej: OBRAS, PLANEACION)"
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #D5D9EB', borderRadius: 9, fontSize: '.88rem', marginBottom: 8, boxSizing: 'border-box' }}
+                />
+                <input
+                  value={nuevoPin}
+                  onChange={e => setNuevoPin(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                  placeholder="PIN de 3 dígitos (ej: 456)"
+                  maxLength={3}
+                  inputMode="numeric"
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #D5D9EB', borderRadius: 9, fontSize: '.88rem', marginBottom: 8, boxSizing: 'border-box', letterSpacing: 6, fontWeight: 700 }}
+                />
+                <button
+                  onClick={crearGrupo}
+                  disabled={busy}
+                  style={{ width: '100%', padding: 11, background: '#2A398D', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}
+                >Crear grupo</button>
               </div>
-            ))}
 
-            <div style={{ borderTop: '1px solid #e8e8e8', marginTop: 16, paddingTop: 14 }}>
-              <h3 style={{ fontSize: '.88rem', color: '#474A4A', marginBottom: 10 }}>Crear nuevo grupo</h3>
-              <input
-                value={nuevoNombre}
-                onChange={e => setNuevoNombre(e.target.value)}
-                placeholder="Nombre del grupo"
-                style={{ width: '100%', padding: '9px 12px', border: '1px solid #D5D9EB', borderRadius: 9, fontSize: '.88rem', marginBottom: 8, boxSizing: 'border-box' }}
-              />
-              <input
-                value={nuevoCodigo}
-                onChange={e => setNuevoCodigo(e.target.value.toUpperCase())}
-                placeholder="Código (ej: OBRAS, PLANEACION)"
-                style={{ width: '100%', padding: '9px 12px', border: '1px solid #D5D9EB', borderRadius: 9, fontSize: '.88rem', marginBottom: 8, boxSizing: 'border-box' }}
-              />
-              <button
-                onClick={crearGrupo}
-                disabled={busy}
-                style={{ width: '100%', padding: 11, background: '#2A398D', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}
-              >Crear grupo</button>
+              {/* Mostrar PINs de grupos existentes */}
+              <div style={{ borderTop: '1px solid #e8e8e8', marginTop: 16, paddingTop: 14 }}>
+                <h3 style={{ fontSize: '.88rem', color: '#474A4A', marginBottom: 10 }}>PINs de grupos</h3>
+                {todosGrupos.map(g => (
+                  <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f0f4f1' }}>
+                    <span style={{ fontSize: '.85rem', color: '#2A398D', fontWeight: 600 }}>{g.nombre}</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '1rem', color: '#474A4A', letterSpacing: 4 }}>{g.pin || '—'}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <button
-          onClick={onCerrar}
-          style={{ display: 'block', width: '100%', padding: 11, background: '#EEF0F9', color: '#2A398D', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', marginTop: 14 }}
-        >Cerrar</button>
+          <button
+            onClick={onCerrar}
+            style={{ display: 'block', width: '100%', padding: 11, background: '#EEF0F9', color: '#2A398D', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: '.88rem', cursor: 'pointer', marginTop: 14 }}
+          >Cerrar</button>
+        </div>
       </div>
-    </div>
+
+      {/* Modal de PIN */}
+      {pinGrupo && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 320, width: '100%' }}>
+            <h2 style={{ fontSize: '1.05rem', color: '#2A398D', marginBottom: 6 }}>🔒 PIN del grupo</h2>
+            <p style={{ fontSize: '.85rem', color: '#474A4A', marginBottom: 16 }}>
+              Ingresa el PIN de 3 dígitos para solicitar unirte a <b>{pinGrupo.nombre}</b>.
+            </p>
+            <input
+              autoFocus
+              value={pinInput}
+              onChange={e => { setPinInput(e.target.value.replace(/\D/g, '').slice(0, 3)); setPinError(''); }}
+              onKeyDown={e => e.key === 'Enter' && confirmarPin()}
+              placeholder="• • •"
+              maxLength={3}
+              inputMode="numeric"
+              style={{
+                width: '100%', padding: '14px 0', textAlign: 'center', fontSize: '2rem', fontWeight: 800,
+                border: `2px solid ${pinError ? '#c0392b' : '#D5D9EB'}`, borderRadius: 12,
+                letterSpacing: 14, boxSizing: 'border-box', marginBottom: 6,
+              }}
+            />
+            {pinError && <p style={{ fontSize: '.78rem', color: '#c0392b', marginBottom: 10, textAlign: 'center' }}>{pinError}</p>}
+            <button
+              onClick={confirmarPin}
+              disabled={busy || pinInput.length !== 3}
+              style={{ display: 'block', width: '100%', padding: 13, background: '#2A398D', color: '#fff', border: 'none', borderRadius: 12, fontSize: '.95rem', fontWeight: 700, cursor: (busy || pinInput.length !== 3) ? 'not-allowed' : 'pointer', opacity: (busy || pinInput.length !== 3) ? .6 : 1, marginBottom: 8 }}
+            >{busy ? 'Enviando…' : 'Solicitar ingreso'}</button>
+            <button
+              onClick={() => setPinGrupo(null)}
+              style={{ display: 'block', width: '100%', padding: 11, background: '#EEF0F9', color: '#2A398D', border: 'none', borderRadius: 12, fontSize: '.9rem', fontWeight: 700, cursor: 'pointer' }}
+            >Cancelar</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
