@@ -1,7 +1,7 @@
 'use client';
 import { useApp } from '@/context/AppContext';
 import { calcularPuntos } from '@/lib/scoring';
-import { flag, FASE_NOMBRE, partidoCerrado } from '@/lib/matches';
+import { flag, FASE_NOMBRE, partidoCerrado, inicioPartido } from '@/lib/matches';
 import type { Match } from '@/lib/types';
 
 export default function MatchCard({ m }: { m: Match }) {
@@ -12,6 +12,9 @@ export default function MatchCard({ m }: { m: Match }) {
   const pred = predicciones[m.id] || { l: null, v: null };
   const tieneR = real.l !== null && real.v !== null;
   const cerrado = partidoCerrado(m);
+  const ini = inicioPartido(m);
+  const ahora = Date.now();
+  const enVivo = !tieneR && ini !== null && ahora >= ini.getTime() && ahora < ini.getTime() + 120 * 60 * 1000;
   const bloqueado = guardados.includes(m.id); // apuesta ya guardada → sin cambios
   const editable = esAdmin ? true : (!tieneR && !cerrado && !bloqueado);
   const lv = esAdmin ? (real.l ?? '') : (pred.l ?? '');
@@ -55,7 +58,10 @@ export default function MatchCard({ m }: { m: Match }) {
     <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', marginBottom: 10, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '.7rem', color: '#5a6b5e', marginBottom: 8, fontWeight: 600 }}>
         <span style={{ background: esKnock ? '#fdf3dd' : '#EDF7EE', color: esKnock ? '#9a7400' : '#1A6B2F', padding: '2px 8px', borderRadius: 6 }}>{faseLabel}</span>
-        <span>{m.dia} · {m.hora} 🇨🇴</span>
+        {enVivo
+          ? <span style={{ background: '#e53935', color: '#fff', padding: '2px 8px', borderRadius: 6, fontWeight: 700, letterSpacing: '.03em' }}>🔴 EN VIVO</span>
+          : <span>{m.dia} · {m.hora} 🇨🇴</span>
+        }
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 600, fontSize: '.92rem' }}>
