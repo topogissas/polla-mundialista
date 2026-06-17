@@ -19,9 +19,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Actualizar marcadores en Supabase
+          cache: 'npm'
+      - name: Instalar dependencias
+        run: npm ci --omit=dev
+      - name: Actualizar marcadores y enviar notificaciones
         run: node scripts/actualizar-resultados.mjs
         env:
-          # La anon key es pública por diseño; si defines estos secrets, tienen prioridad.
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://hhrwtgkmkxpyjujbqlue.supabase.co' }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'sb_publishable_92EJ92ayz-tQZR2AAd5E0w_vBsCoU2K' }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY || 'BINsAPbwpM1PMPOffAeimivyzp5Mmzv4zeUCtOrMrAGjY2J2LP-rQCJzpEEZNCIMstINRtlDZOUBvI_PsQMFRvA' }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: 'mailto:topogissas@gmail.com'

@@ -1,13 +1,15 @@
 #!/usr/bin/env node
-// Actualizador automático de marcadores de la Polla Mundial 2026.
-// Corre en GitHub Actions cada ~15 min. Lee thesportsdb.com (gratis) y
-// escribe los goles en Supabase vía REST con la anon key (pública por diseño).
-//
-// No requiere dependencias: usa fetch nativo de Node 18+.
+// Actualizador automático de marcadores + notificaciones push para la Polla Mundial 2026.
+// Corre en GitHub Actions cada 5 min.
+
+import webpush from 'web-push';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://hhrwtgkmkxpyjujbqlue.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_92EJ92ayz-tQZR2AAd5E0w_vBsCoU2K';
 const TSDB = 'https://www.thesportsdb.com/api/v1/json/3';
+const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY || 'BINsAPbwpM1PMPOffAeimivyzp5Mmzv4zeUCtOrMrAGjY2J2LP-rQCJzpEEZNCIMstINRtlDZOUBvI_PsQMFRvA';
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || '';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:topogissas@gmail.com';
 
 // ── Calendario de la fase de grupos: [match_id, equipoLocalEN, equipoVisitanteEN] ──
 const FIXTURES = [
@@ -82,8 +84,79 @@ async function fetchDay(dateStr) {
   return (data.events || []).filter((e) => e.strLeague === 'FIFA World Cup');
 }
 
+async function enviarPush(filas) {
+  if (!VAPID_PRIVATE || !filas.length) return;
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/polla_push_subscriptions?select=endpoint,p256dh,auth`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+  });
+  if (!res.ok) return;
+  const subs = await res.json();
+  if (!subs.length) return;
+
+  const payload = JSON.stringify({
+    title: '⚽ Polla Mundial — Marcador actualizado',
+    body: filas.map(f => `${f.match_id}: ${f.goles_local}-${f.goles_visitante}`).join(' · '),
+    tag: 'marcador', url: '/',
+  });
+
+  let sent = 0;
+  await Promise.allSettled(subs.map(async (sub) => {
+    try {
+      await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload);
+      sent++;
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        await fetch(`${SUPABASE_URL}/rest/v1/polla_push_subscriptions?endpoint=eq.${encodeURIComponent(sub.endpoint)}`, {
+          method: 'DELETE', headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        }).catch(() => {});
+      }
+    }
+  }));
+  if (sent) console.log(`🔔 ${sent} notificación(es) push enviada(s).`);
+}
+
+async function enviarPushNuevosGoles(filas) {
+  if (!VAPID_PRIVATE || !filas.length) return;
+
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
+
+  // Obtener suscripciones
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/polla_push_subscriptions?select=endpoint,p256dh,auth`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+  });
+  if (!res.ok) return;
+  const subs = await res.json();
+  if (!subs.length) return;
+
+  const payload = JSON.stringify({
+    title: '⚽ Polla Mundial 2026 — Marcador actualizado',
+    body: filas.map(f => `${f.match_id}: ${f.goles_local}-${f.goles_visitante}`).join(' · '),
+    tag: 'marcador',
+    url: '/',
+  });
+
+  let sent = 0;
+  await Promise.allSettled(subs.map(async (sub) => {
+    try {
+      await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload);
+      sent++;
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        // Suscripción expirada — la borramos
+        await fetch(`${SUPABASE_URL}/rest/v1/polla_push_subscriptions?endpoint=eq.${encodeURIComponent(sub.endpoint)}`, {
+          method: 'DELETE',
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        }).catch(() => {});
+      }
+    }
+  }));
+  if (sent) console.log(`🔔 ${sent} notificación(es) push enviada(s).`);
+}
+
 async function main() {
-  // Ventana de fechas UTC: ayer, hoy, mañana (cubre partidos en vivo y recién terminados).
+  // Ventana de fechas UTC: ayer, hoy, mañana
   const now = new Date();
   const dias = [-1, 0, 1].map((off) => {
     const d = new Date(now);
@@ -93,11 +166,8 @@ async function main() {
 
   const eventos = [];
   for (const dia of dias) {
-    try {
-      eventos.push(...(await fetchDay(dia)));
-    } catch (e) {
-      console.error('Error consultando', dia, e.message);
-    }
+    try { eventos.push(...(await fetchDay(dia))); }
+    catch (e) { console.error('Error consultando', dia, e.message); }
   }
 
   const filas = [];
@@ -112,7 +182,6 @@ async function main() {
     let gl = parseInt(ev.intHomeScore, 10);
     let gv = parseInt(ev.intAwayScore, 10);
 
-    // Si viene con local/visitante invertidos, intentamos el orden contrario.
     if (!id) {
       id = pairToId[away + '|' + home];
       if (id) { const t = gl; gl = gv; gv = t; }
@@ -146,6 +215,8 @@ async function main() {
     process.exit(1);
   }
   console.log(`✅ ${filas.length} marcador(es) actualizado(s) en Supabase.`);
+
+  await enviarPush(filas).catch(e => console.error('Push error:', e.message));
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

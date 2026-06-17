@@ -1,14 +1,17 @@
 'use client';
-import { createContext, useContext, useReducer, ReactNode } from 'react';
-import type { Predicciones, Resultados, Especiales, Vista } from '@/lib/types';
+import { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import type { Predicciones, Resultados, Especiales, Vista, Grupo } from '@/lib/types';
 
 interface State {
   usuario: string | null;
   participanteId: string | null;
+  grupoId: string | null;
+  grupoNombre: string | null;
+  grupos: Grupo[];
   predicciones: Predicciones;
   especiales: Especiales;
   resultados: Resultados;
-  guardados: string[]; // match_ids con apuesta ya guardada y BLOQUEADA
+  guardados: string[];
   esAdmin: boolean;
   vista: Vista;
   filtroFase: string;
@@ -19,6 +22,8 @@ interface State {
 
 type Action =
   | { type: 'SET_USER'; nombre: string; id: string }
+  | { type: 'SET_GRUPO'; id: string; nombre: string }
+  | { type: 'SET_GRUPOS'; data: Grupo[] }
   | { type: 'SET_PREDICCIONES'; data: Predicciones }
   | { type: 'SET_ESPECIALES'; data: Especiales }
   | { type: 'SET_RESULTADOS'; data: Resultados }
@@ -35,6 +40,7 @@ type Action =
 
 const initial: State = {
   usuario: null, participanteId: null,
+  grupoId: null, grupoNombre: null, grupos: [],
   predicciones: {}, especiales: { campeon: null, subcampeon: null, goleador: null },
   resultados: {}, guardados: [], esAdmin: false, vista: 'partidos', filtroFase: 'todos',
   cambios: false, toastMsg: null, formatoHora: '24h',
@@ -43,6 +49,8 @@ const initial: State = {
 function reducer(s: State, a: Action): State {
   switch (a.type) {
     case 'SET_USER': return { ...s, usuario: a.nombre, participanteId: a.id };
+    case 'SET_GRUPO': return { ...s, grupoId: a.id, grupoNombre: a.nombre };
+    case 'SET_GRUPOS': return { ...s, grupos: a.data };
     case 'SET_PREDICCIONES': return { ...s, predicciones: a.data };
     case 'SET_ESPECIALES': return { ...s, especiales: a.data };
     case 'SET_RESULTADOS': return { ...s, resultados: a.data };
@@ -63,7 +71,7 @@ function reducer(s: State, a: Action): State {
     case 'SET_FORMATO_HORA': return { ...s, formatoHora: a.val };
     case 'LOGOUT': return {
       ...initial,
-      resultados: s.resultados, // los resultados son globales, no se pierden
+      resultados: s.resultados,
     };
     default: return s;
   }
@@ -75,5 +83,12 @@ export function useApp() { const c = useContext(AppCtx); if (!c) throw new Error
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initial);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  }, []);
+
   return <AppCtx.Provider value={{ ...state, dispatch }}>{children}</AppCtx.Provider>;
 }

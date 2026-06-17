@@ -12,20 +12,34 @@ const FASES = [
 ];
 
 function restanteTexto(ms: number): string {
-  const totalMin = Math.floor(ms / 60000);
-  const d = Math.floor(totalMin / 1440);
-  const h = Math.floor((totalMin % 1440) / 60);
-  const min = totalMin % 60;
+  const totalSeg = Math.floor(ms / 1000);
+  const d = Math.floor(totalSeg / 86400);
+  const h = Math.floor((totalSeg % 86400) / 3600);
+  const min = Math.floor((totalSeg % 3600) / 60);
+  const seg = totalSeg % 60;
   if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${min}m`;
+  if (min < 10) return `${min}:${String(seg).padStart(2, '0')}`;
   return `${min}m`;
 }
 
 function ProximoPartido({ now }: { now: number }) {
   const { formatoHora } = useApp();
+  const [tick, setTick] = useState(now);
+  useEffect(() => {
+    const proximos = ALL_MATCHES
+      .map(m => inicioPartido(m))
+      .filter((d): d is Date => d !== null && d.getTime() > now)
+      .sort((a, b) => a.getTime() - b.getTime());
+    if (proximos.length && proximos[0].getTime() - now < 10 * 60 * 1000) {
+      const id = setInterval(() => setTick(Date.now()), 1000);
+      return () => clearInterval(id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [now]);
   const proximos = ALL_MATCHES
     .map(m => ({ m, ini: inicioPartido(m) }))
-    .filter((x): x is { m: typeof x.m; ini: Date } => x.ini !== null && x.ini.getTime() > now)
+    .filter((x): x is { m: typeof x.m; ini: Date } => x.ini !== null && x.ini.getTime() > tick)
     .sort((a, b) => a.ini.getTime() - b.ini.getTime());
 
   if (!proximos.length) {
@@ -37,8 +51,8 @@ function ProximoPartido({ now }: { now: number }) {
   }
 
   const sig = proximos[0];
-  const cierran24 = proximos.filter(x => x.ini.getTime() - now <= 24 * 3600000).length;
-  const restante = restanteTexto(sig.ini.getTime() - now);
+  const cierran24 = proximos.filter(x => x.ini.getTime() - tick <= 24 * 3600000).length;
+  const restante = restanteTexto(sig.ini.getTime() - tick);
 
   return (
     <div style={{ background: '#EEF0F9', border: '1px solid #C8CCDE', borderRadius: 12, padding: '10px 14px', margin: '12px 0 4px' }}>
@@ -139,7 +153,7 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     );
   }
 
-  // ── Vista usuario: partidos de hoy Y de mañana (para apostar los de madrugada antes de dormir) ──
+  // ── Vista usuario: todos los partidos de hoy; si no hay, los del próximo día con partidos abiertos ──
   const fmt = (ts: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date(ts));
   const hoy = fmt(now);
   const manana = fmt(now + 86400000);
@@ -149,29 +163,18 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     .filter((x): x is { m: typeof x.m; ini: Date; fecha: string } => x.ini !== null && x.fecha !== null)
     .sort((a, b) => a.ini.getTime() - b.ini.getTime());
 
+  // Primero intentamos mostrar todos los de hoy (abiertos Y cerrados)
   const delHoy = todosMapeados.filter(x => x.fecha === hoy).map(x => x.m);
-  const delManana = todosMapeados.filter(x => x.fecha === manana).map(x => x.m);
 
-  const tituloEstilo = { fontWeight: 800, color: '#2A398D', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #3CAC3B' } as const;
-
-  // Si hay partidos hoy o mañana, mostramos ambos bloques.
-  if (delHoy.length || delManana.length) {
+  if (delHoy.length) {
     return (
       <div>
         <ProximoPartido now={now} />
         <LiveNow now={now} resultados={resultados} />
-        {delHoy.length > 0 && (
-          <>
-            <div style={tituloEstilo}>📅 Partidos de hoy</div>
-            {delHoy.map(m => <MatchCard key={m.id} m={m} />)}
-          </>
-        )}
-        {delManana.length > 0 && (
-          <>
-            <div style={tituloEstilo}>🌙 Partidos de mañana</div>
-            {delManana.map(m => <MatchCard key={m.id} m={m} />)}
-          </>
-        )}
+        <div style={{ fontWeight: 800, color: '#2A398D', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #3CAC3B' }}>
+          📅 Partidos de hoy
+        </div>
+        {delHoy.map(m => <MatchCard key={m.id} m={m} />)}
         <div style={{ textAlign: 'center', fontSize: '.76rem', color: '#474A4A', marginTop: 14 }}>
           Lo que apostaron todos está en <b>Historial</b> 📜
         </div>
@@ -179,7 +182,7 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     );
   }
 
-  // Si no hay partidos ni hoy ni mañana, mostramos el próximo día con partidos abiertos
+  // Si no hay partidos hoy, mostramos los del próximo día con partidos abiertos
   const proximoAbierto = todosMapeados.find(x => !partidoCerrado(x.m));
   if (!proximoAbierto) {
     return (
@@ -194,11 +197,14 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
 
   const targetFecha = proximoAbierto.fecha;
   const delDia = todosMapeados.filter(x => x.fecha === targetFecha).map(x => x.m);
+  const titulo = targetFecha === manana ? '📅 Partidos de mañana' : `📅 Partidos · ${delDia[0].dia}`;
 
   return (
     <div>
       <ProximoPartido now={now} />
-      <div style={tituloEstilo}>📅 Próximos partidos · {delDia[0].dia}</div>
+      <div style={{ fontWeight: 800, color: '#2A398D', margin: '16px 0 10px', fontSize: '1.02rem', paddingLeft: 6, borderLeft: '4px solid #3CAC3B' }}>
+        {titulo}
+      </div>
       {delDia.map(m => <MatchCard key={m.id} m={m} />)}
       <div style={{ textAlign: 'center', fontSize: '.76rem', color: '#474A4A', marginTop: 14 }}>
         Lo que apostaron todos está en <b>Historial</b> 📜
