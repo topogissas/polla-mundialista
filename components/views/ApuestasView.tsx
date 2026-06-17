@@ -162,18 +162,22 @@ function AdminApuestasView({ toast, grupoId, formatoHora, esAdmin = false }: { t
   const [busy, setBusy] = useState(false);
 
   const cargar = useCallback(async () => {
-    const { data: resData } = await sb.from('polla_resultados').select('*');
+    const pronosticosQuery = grupoId
+      ? sb.from('polla_pronosticos').select('*').eq('grupo_id', grupoId)
+      : sb.from('polla_pronosticos').select('*');
+
+    const [{ data: resData }, { data: parts }, { data: allPron }] = await Promise.all([
+      sb.from('polla_resultados').select('*'),
+      sb.from('polla_participantes').select('id,nombre'),
+      pronosticosQuery,
+    ]);
+
     const res: Resultados = {};
     (resData || []).forEach((r: any) => { res[r.match_id] = { l: r.goles_local, v: r.goles_visitante }; });
     setResultados(res);
 
-    const { data: parts } = await sb.from('polla_participantes').select('id,nombre');
     const nombreById: Record<string, string> = {};
     (parts || []).forEach((p: any) => { nombreById[p.id] = p.nombre; });
-
-    let query = sb.from('polla_pronosticos').select('*');
-    if (grupoId) query = query.eq('grupo_id', grupoId) as any;
-    const { data: allPron } = await query;
 
     const pm: Record<string, Apuesta[]> = {};
     (allPron || []).forEach((p: any) => {

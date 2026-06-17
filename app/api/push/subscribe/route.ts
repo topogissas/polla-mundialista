@@ -8,7 +8,7 @@ const sb = createClient(
 
 export async function POST(req: NextRequest) {
   const { participanteId, subscription } = await req.json();
-  if (!participanteId || !subscription?.endpoint || !subscription?.keys?.p256dh) {
+  if (!participanteId || !subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
     return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
   }
   const { error } = await sb.from('polla_push_subscriptions').upsert({

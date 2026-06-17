@@ -127,7 +127,11 @@ export default function GruposModal({ onCerrar, onCambiarGrupo }: {
 
   async function confirmarPin() {
     if (!pinGrupo || !participanteId) return;
-    if (pinInput !== (pinGrupo.pin || '')) {
+    if (!pinGrupo.pin) {
+      setPinError('No se pudo verificar el PIN. Contacta al administrador.');
+      return;
+    }
+    if (pinInput !== pinGrupo.pin) {
       setPinError('PIN incorrecto. Pídelo al administrador del grupo.');
       return;
     }

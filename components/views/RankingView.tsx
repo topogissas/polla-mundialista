@@ -14,28 +14,29 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
   const [busy, setBusy] = useState(false);
 
   const cargar = useCallback(async () => {
-    const { data: resData } = await sb.from('polla_resultados').select('*');
+    const miembrosQuery = grupoId
+      ? sb.from('grupo_miembros').select('participante_id').eq('grupo_id', grupoId).eq('estado', 'activo')
+      : Promise.resolve({ data: null });
+    const pronosticosQuery = grupoId
+      ? sb.from('polla_pronosticos').select('*').eq('grupo_id', grupoId)
+      : sb.from('polla_pronosticos').select('*');
+
+    const [{ data: resData }, { data: miembros }, { data: parts }, { data: allPron }] = await Promise.all([
+      sb.from('polla_resultados').select('*'),
+      miembrosQuery,
+      sb.from('polla_participantes').select('id,nombre'),
+      pronosticosQuery,
+    ]);
+
     const resultados: Resultados = {};
     (resData || []).forEach((r: any) => { resultados[r.match_id] = { l: r.goles_local, v: r.goles_visitante }; });
 
-    // Get members of current group (or all if no group / admin without group)
-    let memberIds: Set<string> | null = null;
-    if (grupoId) {
-      const { data: miembros } = await sb.from('grupo_miembros')
-        .select('participante_id')
-        .eq('grupo_id', grupoId)
-        .eq('estado', 'activo');
-      memberIds = new Set((miembros || []).map((m: any) => m.participante_id));
-    }
+    const memberIds: Set<string> | null = miembros
+      ? new Set((miembros as any[]).map((m: any) => m.participante_id))
+      : null;
 
-    const { data: parts } = await sb.from('polla_participantes').select('id,nombre');
     const filteredParts = (parts || []).filter((p: any) => !memberIds || memberIds.has(p.id));
     if (!filteredParts.length) { setTabla([]); return; }
-
-    // Filter pronosticos by grupo_id
-    let pronQuery = sb.from('polla_pronosticos').select('*');
-    if (grupoId) pronQuery = pronQuery.eq('grupo_id', grupoId);
-    const { data: allPron } = await pronQuery;
 
     const porPart: Record<string, Record<string, { l: number; v: number }>> = {};
     (allPron || []).forEach((p: any) => {
