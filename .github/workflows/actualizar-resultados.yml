@@ -1,0 +1,27 @@
+name: Actualizar resultados Mundial
+
+on:
+  schedule:
+    # Cada 5 minutos (mínimo que permite GitHub Actions). Puede atrasarse unos minutos en horas pico.
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {} # permite ejecutarlo a mano desde la pestaña Actions
+
+# Evita que dos corridas se pisen.
+concurrency:
+  group: actualizar-resultados
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Actualizar marcadores en Supabase
+        run: node scripts/actualizar-resultados.mjs
+        env:
+          # La anon key es pública por diseño; si defines estos secrets, tienen prioridad.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://hhrwtgkmkxpyjujbqlue.supabase.co' }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'sb_publishable_92EJ92ayz-tQZR2AAd5E0w_vBsCoU2K' }}
