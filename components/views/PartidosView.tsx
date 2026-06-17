@@ -115,40 +115,110 @@ export default function PartidosView({ toast }: { toast: (m: string) => void }) 
     return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A', fontSize: '.9rem' }}>👋 Toca <b>&quot;Entrar&quot;</b> arriba a la derecha para empezar.</div>;
   }
 
-  // ── Vista admin: ve TODOS los partidos (los necesita para cargar resultados) ──
+  // ── Vista admin: prioritiza partidos sin resultado arriba, con inputs grandes ──
   if (esAdmin) {
-    let lista = ALL_MATCHES;
-    if (filtroFase === 'grupo') lista = lista.filter(m => m.fase === 'grupo');
-    else if (filtroFase !== 'todos') lista = lista.filter(m => m.fase === filtroFase);
+    const ahora = now;
+    const sinResultado = ALL_MATCHES.filter(m => {
+      const r = resultados[m.id];
+      return r?.l == null || r?.v == null;
+    }).sort((a, b) => {
+      const ia = inicioPartido(a), ib = inicioPartido(b);
+      return (ia?.getTime() ?? 0) - (ib?.getTime() ?? 0);
+    });
+
+    let listaFiltrada = ALL_MATCHES;
+    if (filtroFase === 'grupo') listaFiltrada = listaFiltrada.filter(m => m.fase === 'grupo');
+    else if (filtroFase !== 'todos') listaFiltrada = listaFiltrada.filter(m => m.fase === filtroFase);
+    const conResultado = listaFiltrada.filter(m => {
+      const r = resultados[m.id];
+      return r?.l != null && r?.v != null;
+    });
+
     return (
       <div>
-        <ProximoPartido now={now} />
-        <LiveNow now={now} resultados={resultados} />
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '12px 0 4px', WebkitOverflowScrolling: 'touch' as any }}>
-          {FASES.map(([f, label]) => (
-            <button
-              key={f}
-              onClick={() => dispatch({ type: 'SET_FILTRO', val: f })}
-              style={{
-                whiteSpace: 'nowrap', padding: '6px 13px',
-                border: `1px solid ${filtroFase === f ? '#3CAC3B' : '#D5D9EB'}`,
-                background: filtroFase === f ? '#EEF0F9' : '#fff',
-                borderRadius: 18, fontSize: '.78rem', cursor: 'pointer',
-                color: filtroFase === f ? '#2A398D' : '#474A4A', fontWeight: 600,
-              }}
-            >{label}</button>
-          ))}
-        </div>
-        {filtroFase === 'grupo' ? (
-          GRUPOS_LETRAS.map(g => (
-            <div key={g}>
-              <div style={{ fontWeight: 800, color: '#2A398D', margin: '16px 0 8px', fontSize: '1rem', paddingLeft: 4, borderLeft: '4px solid #3CAC3B' }}>Grupo {g}</div>
-              {lista.filter(m => m.grupo === g).map(m => <MatchCard key={m.id} m={m} />)}
+        {/* ── Sección prioritaria: partidos sin resultado ── */}
+        {sinResultado.length > 0 && (
+          <div style={{ marginBottom: 4 }}>
+            <div style={{ fontWeight: 800, color: '#fff', background: '#e53935', padding: '8px 14px', borderRadius: 12, marginBottom: 10, fontSize: '.92rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+              ⚡ {sinResultado.length} partido{sinResultado.length > 1 ? 's' : ''} sin resultado
             </div>
-          ))
-        ) : (
-          lista.map(m => <MatchCard key={m.id} m={m} />)
+            {sinResultado.map(m => {
+              const ini = inicioPartido(m);
+              const enVivo = ini !== null && ahora >= ini.getTime() && ahora < ini.getTime() + 120 * 60 * 1000;
+              const r = resultados[m.id] || { l: null, v: null };
+              return (
+                <div key={m.id} style={{
+                  background: enVivo ? '#fff8f8' : '#fff',
+                  border: enVivo ? '2px solid #e53935' : '2px solid #D5D9EB',
+                  borderRadius: 16, padding: '14px 16px', marginBottom: 10,
+                  boxShadow: enVivo ? '0 2px 12px rgba(229,57,53,.15)' : '0 1px 3px rgba(0,0,0,.06)',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.72rem', fontWeight: 700, marginBottom: 10 }}>
+                    <span style={{ color: '#2A398D' }}>{m.id} · {m.fase !== 'grupo' ? m.fase : 'Grupo ' + m.grupo}</span>
+                    {enVivo
+                      ? <span style={{ color: '#e53935' }}>🔴 EN VIVO</span>
+                      : <span style={{ color: '#474A4A' }}>{m.dia} · {formatHora(m.hora, formatoHora)} 🇨🇴</span>
+                    }
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 10 }}>
+                    <div style={{ fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: '1.6rem' }}>{flag(m.local)}</span>
+                      <span>{m.local}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        inputMode="numeric" maxLength={2}
+                        value={String(r.l ?? '')}
+                        onChange={e => {
+                          const v = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
+                          dispatch({ type: 'UPDATE_SCORE', store: 'resultados', mid: m.id, side: 'l', val: v === '' ? null : parseInt(v) });
+                        }}
+                        style={{ width: 54, height: 52, textAlign: 'center', fontSize: '1.5rem', fontWeight: 800, border: '2px solid #D5D9EB', borderRadius: 10, background: '#fff', color: '#1A1F3A' }}
+                      />
+                      <span style={{ fontSize: '.75rem', color: '#474A4A', fontWeight: 700 }}>VS</span>
+                      <input
+                        inputMode="numeric" maxLength={2}
+                        value={String(r.v ?? '')}
+                        onChange={e => {
+                          const v = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
+                          dispatch({ type: 'UPDATE_SCORE', store: 'resultados', mid: m.id, side: 'v', val: v === '' ? null : parseInt(v) });
+                        }}
+                        style={{ width: 54, height: 52, textAlign: 'center', fontSize: '1.5rem', fontWeight: 800, border: '2px solid #D5D9EB', borderRadius: 10, background: '#fff', color: '#1A1F3A' }}
+                      />
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: '1rem', display: 'flex', flexDirection: 'row-reverse', alignItems: 'center', gap: 6, textAlign: 'right' }}>
+                      <span style={{ fontSize: '1.6rem' }}>{flag(m.visitante)}</span>
+                      <span>{m.visitante}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
+
+        {/* ── Partidos con resultado (filtrable) ── */}
+        {conResultado.length > 0 && (
+          <div>
+            <div style={{ fontWeight: 700, color: '#3CAC3B', fontSize: '.82rem', margin: '8px 0 10px', paddingLeft: 4, borderLeft: '3px solid #3CAC3B' }}>
+              ✅ Con resultado ({conResultado.length})
+            </div>
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '0 0 8px', WebkitOverflowScrolling: 'touch' as any }}>
+              {FASES.map(([f, label]) => (
+                <button key={f} onClick={() => dispatch({ type: 'SET_FILTRO', val: f })} style={{
+                  whiteSpace: 'nowrap', padding: '5px 11px',
+                  border: `1px solid ${filtroFase === f ? '#3CAC3B' : '#D5D9EB'}`,
+                  background: filtroFase === f ? '#EEF0F9' : '#fff',
+                  borderRadius: 18, fontSize: '.76rem', cursor: 'pointer',
+                  color: filtroFase === f ? '#2A398D' : '#474A4A', fontWeight: 600,
+                }}>{label}</button>
+              ))}
+            </div>
+            {conResultado.map(m => <MatchCard key={m.id} m={m} />)}
+          </div>
+        )}
+
+        {sinResultado.length === 0 && <div style={{ textAlign: 'center', padding: 20, color: '#3CAC3B', fontWeight: 700 }}>✅ Todos los partidos tienen resultado</div>}
       </div>
     );
   }
