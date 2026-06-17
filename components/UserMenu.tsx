@@ -96,7 +96,7 @@ export default function UserMenu({ onSalir, onMisGrupos }: { onSalir: () => void
     const hoyCol = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
     const partidosHoy = ALL_MATCHES.filter(m => fechaColPartido(m) === hoyCol);
     const listaHoy = partidosHoy.length > 0
-      ? '\n\n⚽ *Partidos de hoy (hora COL)*\n' + partidosHoy.map(m => `(${formatHora(m.hora, '12h')}) — ${flag(m.local)} ${m.local} vs ${m.visitante} ${flag(m.visitante)}`).join('\n')
+      ? '\n\n⚽ *Partidos de hoy (hora COL)*\n' + partidosHoy.map(m => `${m.hora} (${formatHora(m.hora, '12h')}) — ${flag(m.local)} ${m.local} vs ${m.visitante} ${flag(m.visitante)}`).join('\n')
       : '';
 
     const texto = `🏆 *Polla Mundial 2026*\n👤 *${usuario}*${grupoNombre ? ` · Grupo ${grupoNombre}` : ''}\n${ranking}${listaHoy}\n\n¡Únete y compite!`;
