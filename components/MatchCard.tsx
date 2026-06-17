@@ -24,8 +24,8 @@ export default function MatchCard({ m }: { m: Match }) {
   if (tieneR && !esAdmin) {
     const pts = calcularPuntos(pred, real, m.fase);
     if (pred.l !== null) {
-      const color = pts === 0 ? '#cfd8d2' : pts === 25 ? '#1A6B2F' : '#27AE60';
-      const etiqueta = pts === 0 ? 'Fallaste' : pts === 25 ? 'Marcador exacto +25' : 'Acertaste ganador +15';
+      const color = enVivo ? '#e53935' : pts === 0 ? '#cfd8d2' : pts === 25 ? '#1A6B2F' : '#27AE60';
+      const etiqueta = enVivo ? '🔴 En juego…' : pts === 0 ? 'Fallaste' : pts === 25 ? 'Marcador exacto +25' : 'Acertaste ganador +15';
       resultLine = <div style={{ textAlign: 'center', fontSize: '.74rem', marginTop: 8, fontWeight: 600, padding: 4, borderRadius: 7, background: color, color: '#fff' }}>
         Real: {real.l}-{real.v} · Tú: {pred.l}-{pred.v} · <b>{etiqueta}</b>
       </div>;
