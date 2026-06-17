@@ -199,6 +199,9 @@ export default function Home() {
       }
     }
     init();
+    // Refresca resultados cada 60 s para mostrar marcadores en vivo sin recargar la página
+    const intervalo = setInterval(cargarResultados, 60_000);
+    return () => clearInterval(intervalo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
