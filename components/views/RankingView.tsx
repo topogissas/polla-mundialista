@@ -91,6 +91,7 @@ export default function RankingView({ toast }: { toast: (m: string) => void }) {
   }
 
   if (!tabla) return <div style={{ textAlign: 'center', padding: 30, color: '#474A4A' }}>Calculando ranking…</div>;
+  if (!grupoId) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Selecciona un grupo para ver el ranking.</div>;
   if (!tabla.length) return <div style={{ textAlign: 'center', padding: '40px 20px', color: '#474A4A' }}>Aún no hay participantes en este grupo. ¡Invita a tus colegas!</div>;
 
   return (
