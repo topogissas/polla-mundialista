@@ -101,7 +101,7 @@ function MisResultados() {
         const ini = inicioPartido(m);
         const ahora = Date.now();
         const enVivo = ini !== null && ahora >= ini.getTime() && ahora < ini.getTime() + 120 * 60 * 1000;
-        const pts = tieneR && pred?.l !== null ? calcularPuntos(pred!, real!, m.fase) : null;
+        const pts = tieneR && pred != null && pred.l !== null ? calcularPuntos(pred, real!, m.fase) : null;
         const faseLabel = m.fase === 'grupo' ? ('Grupo ' + m.grupo) : FASE_NOMBRE[m.fase];
 
         let badge = { bg: '#EEF0F9', color: '#2A398D', label: '⏳ Por jugar' };
