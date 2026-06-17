@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { sb } from '@/lib/supabase';
 import { useApp } from '@/context/AppContext';
-import { ALL_MATCHES, flag, FASE_NOMBRE } from '@/lib/matches';
+import { ALL_MATCHES, flag, FASE_NOMBRE, inicioPartido } from '@/lib/matches';
 import { calcularPuntos } from '@/lib/scoring';
 import type { Resultados, Score } from '@/lib/types';
 
@@ -89,6 +89,9 @@ export default function ApuestasView({ toast }: { toast: (m: string) => void }) 
       ) : matches.map(m => {
         const real = resultados[m.id];
         const tieneR = real?.l !== null && real?.l !== undefined;
+        const ini = inicioPartido(m);
+        const ahora = Date.now();
+        const enVivo = ini !== null && ahora >= ini.getTime() && ahora < ini.getTime() + 120 * 60 * 1000;
         const faseLabel = m.fase === 'grupo' ? ('Grupo ' + m.grupo) : FASE_NOMBRE[m.fase];
         return (
           <div key={m.id} style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', marginBottom: 10, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
@@ -103,11 +106,13 @@ export default function ApuestasView({ toast }: { toast: (m: string) => void }) 
             {porMatch[m.id].map(a => {
               const pts = tieneR ? calcularPuntos(a.score, real, m.fase) : null;
               const color = pts === null ? '#5a6b5e' : pts === 0 ? '#c0392b' : pts === 25 ? '#1A6B2F' : '#27AE60';
+              const etiqueta = enVivo ? '🔴' : pts === 0 ? 'Falló' : '+' + pts;
+              const etqColor = enVivo ? '#e53935' : color;
               return (
                 <div key={a.pid} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid #f0f4f1' }}>
                   <span style={{ flex: 1, fontSize: '.85rem', fontWeight: 600 }}>{a.nombre}</span>
                   <span style={{ background: '#EDF7EE', color: '#1A6B2F', borderRadius: 6, padding: '2px 10px', fontWeight: 800, fontSize: '.85rem' }}>{a.score.l}-{a.score.v}</span>
-                  {tieneR && <span style={{ fontSize: '.72rem', fontWeight: 700, color, width: 46, textAlign: 'right' }}>{pts === 0 ? 'Falló' : '+' + pts}</span>}
+                  {tieneR && <span style={{ fontSize: '.72rem', fontWeight: 700, color: etqColor, width: 46, textAlign: 'right' }}>{etiqueta}</span>}
                   {esAdmin && (
                     <button
                       onClick={() => borrarApuesta(a.pid, m.id, a.nombre)}
