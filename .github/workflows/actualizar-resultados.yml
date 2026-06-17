@@ -2,8 +2,8 @@ name: Actualizar resultados Mundial
 
 on:
   schedule:
-    # Cada 15 minutos (hora UTC). GitHub puede atrasarlo unos minutos en horas pico.
-    - cron: '*/15 * * * *'
+    # Cada 5 minutos (mínimo que permite GitHub Actions). Puede atrasarse unos minutos en horas pico.
+    - cron: '*/5 * * * *'
   workflow_dispatch: {} # permite ejecutarlo a mano desde la pestaña Actions
 
 # Evita que dos corridas se pisen.
