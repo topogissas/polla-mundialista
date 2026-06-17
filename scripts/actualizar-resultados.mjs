@@ -117,44 +117,6 @@ async function enviarPush(filas) {
   if (sent) console.log(`🔔 ${sent} notificación(es) push enviada(s).`);
 }
 
-async function enviarPushNuevosGoles(filas) {
-  if (!VAPID_PRIVATE || !filas.length) return;
-
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
-
-  // Obtener suscripciones
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/polla_push_subscriptions?select=endpoint,p256dh,auth`, {
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-  });
-  if (!res.ok) return;
-  const subs = await res.json();
-  if (!subs.length) return;
-
-  const payload = JSON.stringify({
-    title: '⚽ Polla Mundial 2026 — Marcador actualizado',
-    body: filas.map(f => `${f.match_id}: ${f.goles_local}-${f.goles_visitante}`).join(' · '),
-    tag: 'marcador',
-    url: '/',
-  });
-
-  let sent = 0;
-  await Promise.allSettled(subs.map(async (sub) => {
-    try {
-      await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload);
-      sent++;
-    } catch (err) {
-      if (err.statusCode === 410 || err.statusCode === 404) {
-        // Suscripción expirada — la borramos
-        await fetch(`${SUPABASE_URL}/rest/v1/polla_push_subscriptions?endpoint=eq.${encodeURIComponent(sub.endpoint)}`, {
-          method: 'DELETE',
-          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-        }).catch(() => {});
-      }
-    }
-  }));
-  if (sent) console.log(`🔔 ${sent} notificación(es) push enviada(s).`);
-}
-
 async function main() {
   // Ventana de fechas UTC: ayer, hoy, mañana
   const now = new Date();

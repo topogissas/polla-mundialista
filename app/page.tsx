@@ -163,7 +163,7 @@ export default function Home() {
 
   useEffect(() => {
     async function init() {
-      cargarResultados();
+      await cargarResultados();
       const u = localStorage.getItem('polla_user');
       const id = localStorage.getItem('polla_id');
       const gid = localStorage.getItem('polla_grupo_id');
