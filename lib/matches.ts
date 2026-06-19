@@ -122,7 +122,7 @@ const GRUPOS_RAW: [string, string, string, string, string, string, string][] = [
   ["G30","C","Vie 19 Jun","17:00","Escocia","Marruecos","Estadio Boston"],
   ["G31","C","Vie 19 Jun","20:00","Brasil","Haití","Estadio Filadelfia"],
   ["G32","D","Vie 19 Jun","23:00","Turquía","Paraguay","Estadio San Francisco"],
-  ["G33","F","Sáb 20 Jun","14:00","Países Bajos","Suecia","Estadio Houston"],
+  ["G33","F","Sáb 20 Jun","12:00","Países Bajos","Suecia","Estadio Houston"],
   ["G34","E","Sáb 20 Jun","15:00","Alemania","Costa de Marfil","Estadio Toronto"],
   ["G35","E","Sáb 20 Jun","19:00","Ecuador","Curazao","Estadio Kansas City"],
   ["G36","F","Sáb 20 Jun","23:00","Túnez","Japón","Estadio Monterrey"],
