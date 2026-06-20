@@ -4,6 +4,7 @@ import { calcularPuntos } from '@/lib/scoring';
 import { flag, FASE_NOMBRE, partidoCerrado, inicioPartido, formatHora } from '@/lib/matches';
 import LiveStats from '@/components/LiveStats';
 import type { Match } from '@/lib/types';
+import { useState, useEffect } from 'react';
 
 export default function MatchCard({ m }: { m: Match }) {
   const { esAdmin, predicciones, resultados, guardados, formatoHora, dispatch } = useApp();
@@ -14,7 +15,11 @@ export default function MatchCard({ m }: { m: Match }) {
   const tieneR = real.l !== null && real.v !== null;
   const cerrado = partidoCerrado(m);
   const ini = inicioPartido(m);
-  const ahora = Date.now();
+  const [ahora, setAhora] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setAhora(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
   const enVivo = ini !== null && ahora >= ini.getTime() && ahora < ini.getTime() + 120 * 60 * 1000;
   const bloqueado = guardados.includes(m.id);
   const editable = esAdmin ? true : (!tieneR && !cerrado && !bloqueado);
