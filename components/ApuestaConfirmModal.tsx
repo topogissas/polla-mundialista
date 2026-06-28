@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { flag } from '@/lib/matches';
 
 export interface ApuestaGuardada {
@@ -10,6 +10,8 @@ export interface ApuestaGuardada {
   v: number;
 }
 
+const CONFETTI_COLORS = ['#2A398D', '#3CAC3B', '#F2C200', '#e53935', '#4FA3F7', '#FF7A00'];
+
 export default function ApuestaConfirmModal({ apuestas, onClose }: { apuestas: ApuestaGuardada[]; onClose: () => void }) {
   // Auto-cierre a los 6 s (además del botón y el toque fuera del recuadro).
   useEffect(() => {
@@ -17,16 +19,49 @@ export default function ApuestaConfirmModal({ apuestas, onClose }: { apuestas: A
     return () => clearTimeout(t);
   }, [onClose]);
 
+  // Piezas de confeti generadas una sola vez (solo en cliente, sin riesgo de hidratación).
+  const confeti = useMemo(
+    () => Array.from({ length: 70 }, (_, i) => ({
+      left: Math.random() * 100,
+      delay: Math.random() * 0.8,
+      duration: 2 + Math.random() * 2,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      w: 6 + Math.random() * 6,
+      h: 9 + Math.random() * 8,
+      round: Math.random() < 0.3,
+    })),
+    []
+  );
+
   const varias = apuestas.length > 1;
 
   return (
     <div
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200, animation: 'fadeIn .2s ease' }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 200, animation: 'fadeIn .2s ease', overflow: 'hidden' }}
     >
+      {/* Lluvia de confeti (no intercepta clics) */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 210, overflow: 'hidden' }}>
+        {confeti.map((c, i) => (
+          <span
+            key={i}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: `${c.left}%`,
+              width: c.w,
+              height: c.h,
+              background: c.color,
+              borderRadius: c.round ? '50%' : 2,
+              animation: `confettiFall ${c.duration}s linear ${c.delay}s forwards`,
+            }}
+          />
+        ))}
+      </div>
+
       <div
         onClick={e => e.stopPropagation()}
-        style={{ background: '#fff', borderRadius: 20, padding: '26px 22px', maxWidth: 380, width: '100%', textAlign: 'center', boxShadow: '0 16px 48px rgba(0,0,0,.32)', animation: 'popIn .38s cubic-bezier(.18,.89,.32,1.28)' }}
+        style={{ position: 'relative', zIndex: 220, background: '#fff', borderRadius: 20, padding: '26px 22px', maxWidth: 380, width: '100%', textAlign: 'center', boxShadow: '0 16px 48px rgba(0,0,0,.32)', animation: 'popIn .38s cubic-bezier(.18,.89,.32,1.28)' }}
       >
         <div style={{ fontSize: '2.8rem', lineHeight: 1, marginBottom: 6 }}>🎉</div>
         <h2 style={{ fontSize: '1.18rem', color: '#2A398D', fontWeight: 800, margin: '0 0 4px' }}>¡Apuesta registrada!</h2>
