@@ -9,6 +9,7 @@ import AdminModal from '@/components/AdminModal';
 import UserMenu from '@/components/UserMenu';
 import Toast from '@/components/Toast';
 import SaveBar from '@/components/SaveBar';
+import ApuestaConfirmModal, { type ApuestaGuardada } from '@/components/ApuestaConfirmModal';
 import GrupoSelectorModal from '@/components/GrupoSelectorModal';
 import GruposModal from '@/components/GruposModal';
 import PartidosView from '@/components/views/PartidosView';
@@ -25,6 +26,7 @@ export default function Home() {
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mostrarSelectorGrupo, setMostrarSelectorGrupo] = useState(false);
   const [mostrarGruposModal, setMostrarGruposModal] = useState(false);
+  const [apuestaModal, setApuestaModal] = useState<ApuestaGuardada[] | null>(null);
 
   function toast(msg: string) {
     dispatch({ type: 'TOAST', msg });
@@ -143,6 +145,16 @@ export default function Home() {
       toast('✅ Resultados guardados — el ranking se actualizó para todos');
     } else {
       if (!grupoId) { toast('Selecciona un grupo primero'); return; }
+      // (A) No permitir apuestas sin valor: si un partido tiene un solo marcador
+      // (un lado lleno y el otro vacío), avisar cuáles y no guardar nada hasta corregir.
+      const incompletas = Object.entries(predicciones)
+        .filter(([mid, p]) => !guardados.includes(mid) && !partidoCerrado(MAP[mid]) && ((p.l == null) !== (p.v == null)));
+      if (incompletas.length) {
+        const nombres = incompletas.map(([mid]) => (MAP[mid] ? `${MAP[mid].local}–${MAP[mid].visitante}` : mid));
+        dispatch({ type: 'SET_CAMBIOS', val: true });
+        toast(`⚠️ Falta un marcador en: ${nombres.join(', ')}. Pon ambos números o deja el partido vacío.`);
+        return;
+      }
       const nuevos = Object.entries(predicciones)
         .filter(([mid, p]) => p.l != null && p.v != null && !guardados.includes(mid) && !partidoCerrado(MAP[mid]));
       if (!nuevos.length) { toast('No hay apuestas nuevas para guardar'); return; }
@@ -157,7 +169,10 @@ export default function Home() {
       const { error } = await sb.from('polla_pronosticos').upsert(rows, { onConflict: 'participante_id,match_id,grupo_id' });
       if (error) { toast('Error: ' + error.message); return; }
       dispatch({ type: 'ADD_GUARDADOS', ids: nuevos.map(([mid]) => mid) });
-      toast(`✅ ${rows.length} apuesta(s) guardada(s) y bloqueada(s)`);
+      // (B) Hiperframe de confirmación con los marcadores apostados.
+      setApuestaModal(nuevos.map(([mid, p]) => ({
+        mid, local: MAP[mid].local, visitante: MAP[mid].visitante, l: p.l as number, v: p.v as number,
+      })));
     }
   }
 
@@ -225,6 +240,9 @@ export default function Home() {
         onMisGrupos={() => setMostrarGruposModal(true)}
       />
       <Toast />
+      {apuestaModal && (
+        <ApuestaConfirmModal apuestas={apuestaModal} onClose={() => setApuestaModal(null)} />
+      )}
       {mostrarSelectorGrupo && grupos.length > 1 && (
         <GrupoSelectorModal onSeleccionar={seleccionarGrupo} />
       )}
