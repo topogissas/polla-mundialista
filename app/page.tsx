@@ -134,7 +134,7 @@ export default function Home() {
     const MAP = Object.fromEntries(ALL_MATCHES.map(m => [m.id, m]));
     if (esAdmin) {
       const rows = Object.entries(resultados)
-        .filter(([, r]) => r.l !== null && r.v !== null)
+        .filter(([, r]) => r.l != null && r.v != null)
         .map(([mid, r]) => ({ match_id: mid, goles_local: r.l, goles_visitante: r.v, actualizado_en: new Date().toISOString() }));
       if (rows.length) {
         const { error } = await sb.from('polla_resultados').upsert(rows, { onConflict: 'match_id' });
@@ -144,7 +144,7 @@ export default function Home() {
     } else {
       if (!grupoId) { toast('Selecciona un grupo primero'); return; }
       const nuevos = Object.entries(predicciones)
-        .filter(([mid, p]) => p.l !== null && p.v !== null && !guardados.includes(mid) && !partidoCerrado(MAP[mid]));
+        .filter(([mid, p]) => p.l != null && p.v != null && !guardados.includes(mid) && !partidoCerrado(MAP[mid]));
       if (!nuevos.length) { toast('No hay apuestas nuevas para guardar'); return; }
       const rows = nuevos.map(([mid, p]) => ({
         participante_id: participanteId,
