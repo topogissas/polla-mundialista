@@ -165,11 +165,11 @@ const GRUPOS_RAW: [string, string, string, string, string, string, string][] = [
 ];
 
 const KNOCKOUT_RAW: [string, string, string, string, string, string, string][] = [
-  ["K1","R32","Dom 28 Jun","14:00","Por definir","Por definir","Estadio Los Ángeles"],
-  ["K2","R32","Lun 29 Jun","12:00","Por definir","Por definir","Estadio Houston"],
+  ["K1","R32","Dom 28 Jun","14:00","Sudáfrica","Canadá","Estadio Los Ángeles"],
+  ["K2","R32","Lun 29 Jun","12:00","Brasil","Japón","Estadio Houston"],
   ["K3","R32","Lun 29 Jun","15:30","Por definir","Por definir","Estadio Boston"],
-  ["K4","R32","Lun 29 Jun","20:00","Por definir","Por definir","Estadio Monterrey"],
-  ["K5","R32","Mar 30 Jun","12:00","Por definir","Por definir","Estadio Dallas"],
+  ["K4","R32","Lun 29 Jun","20:00","Países Bajos","Marruecos","Estadio Monterrey"],
+  ["K5","R32","Mar 30 Jun","12:00","Costa de Marfil","Noruega","Estadio Dallas"],
   ["K6","R32","Mar 30 Jun","16:00","Por definir","Por definir","Estadio Nueva York/NJ"],
   ["K7","R32","Mar 30 Jun","20:00","Por definir","Por definir","Estadio Ciudad de México"],
   ["K8","R32","Mié 01 Jul","11:00","Por definir","Por definir","Estadio Atlanta"],
