@@ -53,7 +53,7 @@ export default function ApuestaConfirmModal({ apuestas, onClose }: { apuestas: A
               height: c.h,
               background: c.color,
               borderRadius: c.round ? '50%' : 2,
-              animation: `confettiFall ${c.duration}s linear ${c.delay}s forwards`,
+              animation: `confettiFall ${c.duration}s linear ${c.delay}s infinite`,
             }}
           />
         ))}
