@@ -193,8 +193,8 @@ const KNOCKOUT_RAW: [string, string, string, string, string, string, string][] =
   ["K26","CF","Vie 10 Jul","14:00","España","Bélgica","Estadio Los Ángeles"],
   ["K27","CF","Sáb 11 Jul","16:00","Noruega","Inglaterra","Estadio Miami"],
   ["K28","CF","Sáb 11 Jul","20:00","Argentina","Suiza","Estadio Kansas City"],
-  ["K29","SF","Mar 14 Jul","14:00","Por definir","Por definir","Estadio Dallas"],
-  ["K30","SF","Mié 15 Jul","14:00","Por definir","Por definir","Estadio Atlanta"],
+  ["K29","SF","Mar 14 Jul","14:00","Francia","España","Estadio Dallas"],
+  ["K30","SF","Mié 15 Jul","14:00","Inglaterra","Argentina","Estadio Atlanta"],
   ["K31","3P","Sáb 18 Jul","16:00","Por definir","Por definir","Estadio Miami"],
   ["K32","FN","Dom 19 Jul","14:00","Por definir","Por definir","Estadio Nueva York/NJ"],
 ];
